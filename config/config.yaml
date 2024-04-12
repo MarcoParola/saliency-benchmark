@@ -1,0 +1,30 @@
+defaults:
+  - _self_
+  - dataset_info
+
+method: sidu
+model: resnet18
+seed: 42
+
+dataset: 
+  name: cifar10
+  path: ./data
+
+train:
+  batch_size: 32
+  max_epochs: 100
+  lr: 1e-5
+  weight_decay: 5e-4
+  accelerator: cpu
+  save_path: ./models
+  num_workers: 1
+  log_every_n_steps: 100
+
+log:
+  path: ./logs
+  wandb: True
+
+wandb:
+  project: saliency-benchmark
+  entity: marcoparola
+

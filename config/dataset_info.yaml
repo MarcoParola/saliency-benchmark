@@ -1,0 +1,17 @@
+cifar10:
+  n_classes: 10
+
+cifar100:
+  n_classes: 100
+
+imagenet:
+  n_classes: 1000
+
+caltech101:
+  n_classes: 101
+
+svhn:
+  n_classes: 10
+
+oxford-iiit-pet:
+  n_classes: 37
