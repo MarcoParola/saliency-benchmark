@@ -5,6 +5,8 @@ import timm
 import detectors
 import numpy as np
 
+from src.saliency_method import sidu
+
 
 def load_model(model_name, dataset):
     model = None
@@ -227,7 +229,14 @@ def load_dataset(dataset, val_split=0.2, test_split=0.2):
 
     return train, val, test
 
-    
+
+def load_saliecy_method(method):
+    if method == 'sidu':
+        return sidu.sidu_interface
+    else:
+        raise ValueError(f'Unknown saliency method: {method}')
+        
+
 if __name__ == "__main__":
 
     datasets = ['cifar10', 'cifar100', 'caltech101', 'oxford-iiit-pet', 'svhn']

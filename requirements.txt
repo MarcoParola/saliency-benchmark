@@ -1,0 +1,6 @@
+hydra-core
+matplotlib
+pytorch-sidu
+torch
+torchvision
+transformers
