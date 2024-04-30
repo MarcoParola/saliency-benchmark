@@ -24,7 +24,7 @@ python -m pip install -r requirements.txt
 ## Usage
 
 ```sh
-python train.py # TODO da vedere gli argomenti
+python train.py model=ResNet18_Weights.IMAGENET1K_V1 dataset.name=cifar10
 ```
 
 ```sh

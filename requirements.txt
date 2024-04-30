@@ -4,3 +4,8 @@ pytorch-sidu
 torch
 torchvision
 transformers
+timm
+detectors
+gdown
+pytorch_lightning
+wandb

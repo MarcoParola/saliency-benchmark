@@ -4,8 +4,9 @@ from transformers import AutoModelForImageClassification, AutoFeatureExtractor
 import timm
 import detectors
 import numpy as np
+import os
 
-from src.saliency_method import sidu
+from src.saliency_method.sidu import sidu_interface
 
 
 def load_model(model_name, dataset):
@@ -157,7 +158,7 @@ def load_model(model_name, dataset):
 
     return model
 
-def load_dataset(dataset, val_split=0.2, test_split=0.2):
+def load_dataset(dataset, data_dir, resize=256, val_split=0.2, test_split=0.2):
 
     train, val, test = None, None, None
 
@@ -166,28 +167,28 @@ def load_dataset(dataset, val_split=0.2, test_split=0.2):
 
     transform = torchvision.transforms.Compose([
         torchvision.transforms.ToTensor(),
-        torchvision.transforms.Resize((224, 224)),
+        torchvision.transforms.Resize((resize, resize)),
     ])
 
     # CIFAR-10
     if dataset == 'cifar10':
-        train = torchvision.datasets.CIFAR10('./data', train=True, download=True, transform=transform)
-        test = torchvision.datasets.CIFAR10('./data', train=False, download=True, transform=transform)
+        train = torchvision.datasets.CIFAR10(data_dir, train=True, download=True, transform=transform)
+        test = torchvision.datasets.CIFAR10(data_dir, train=False, download=True, transform=transform)
 
         split = int(len(train) * val_split)
         train, val = torch.utils.data.random_split(train, [len(train) - split, split])
 
     # CIFAR-100
     elif dataset == 'cifar100':
-        train = torchvision.datasets.CIFAR100('./data', train=True, download=True, transform=transform)
-        test = torchvision.datasets.CIFAR100('./data', train=False, download=True, transform=transform)
+        train = torchvision.datasets.CIFAR100(data_dir, train=True, download=True, transform=transform)
+        test = torchvision.datasets.CIFAR100(data_dir, train=False, download=True, transform=transform)
 
         split = int(len(train) * val_split)
         train, val = torch.utils.data.random_split(train, [len(train) - split, split])
 
     # Caltech101
     elif dataset == 'caltech101':
-        data = torchvision.datasets.Caltech101('./data', download=True, transform=transform)
+        data = torchvision.datasets.Caltech101(data_dir, download=True, transform=transform)
         num_train = len(data)
         indices = list(range(num_train))
         np.random.shuffle(indices)
@@ -204,7 +205,7 @@ def load_dataset(dataset, val_split=0.2, test_split=0.2):
 
     # Oxford-IIIT Pet
     elif dataset == 'oxford-iiit-pet':
-        data = torchvision.datasets.OxfordIIITPet('./data', download=True, transform=transform)
+        data = torchvision.datasets.OxfordIIITPet(data_dir, download=True, transform=transform)
         num_train = len(data)
         indices = list(range(num_train))
         np.random.shuffle(indices)
@@ -217,10 +218,24 @@ def load_dataset(dataset, val_split=0.2, test_split=0.2):
 
     # SVHN
     elif dataset == 'svhn':
-        #data = torchvision.datasets.SVHN('./data', split='test', download=True, transform=transform)
-        train = torchvision.datasets.SVHN('./data', split='train', download=True, transform=transform)
-        test = torchvision.datasets.SVHN('./data', split='test', download=True, transform=transform)
+        #data = torchvision.datasets.SVHN(data_dir, split='test', download=True, transform=transform)
+        train = torchvision.datasets.SVHN(data_dir, split='train', download=True, transform=transform)
+        test = torchvision.datasets.SVHN(data_dir, split='test', download=True, transform=transform)
 
+        split = int(len(train) * val_split)
+        train, val = torch.utils.data.random_split(train, [len(train) - split, split])
+
+    # MNIST
+    elif dataset == 'mnist':
+        train = torchvision.datasets.MNIST(data_dir, train=True, download=True, transform=transform)
+        test = torchvision.datasets.MNIST(data_dir, train=False, download=True, transform=transform)
+        split = int(len(train) * val_split)
+        train, val = torch.utils.data.random_split(train, [len(train) - split, split])
+
+    # FashionMNIST
+    elif dataset == 'fashionmnist':
+        train = torchvision.datasets.FashionMNIST(data_dir, train=True, download=True, transform=transform)
+        test = torchvision.datasets.FashionMNIST(data_dir, train=False, download=True, transform=transform)
         split = int(len(train) * val_split)
         train, val = torch.utils.data.random_split(train, [len(train) - split, split])
 
@@ -232,21 +247,32 @@ def load_dataset(dataset, val_split=0.2, test_split=0.2):
 
 def load_saliecy_method(method):
     if method == 'sidu':
-        return sidu.sidu_interface
+        return sidu_interface
     else:
         raise ValueError(f'Unknown saliency method: {method}')
         
 
 if __name__ == "__main__":
 
-    datasets = ['cifar10', 'cifar100', 'caltech101', 'oxford-iiit-pet', 'svhn']
+    datasets = [
+        # 'cifar10',
+        # 'cifar100',
+        # 'caltech101',
+        # 'imagenet',
+        # 'oxford-iiit-pet',
+        # 'svhn',
+        'mnist',
+        'fashionmnist',
+    ]
     for dataset in datasets:
         print(f'\n\nDataset: {dataset}')
-        data = load_dataset(dataset)
+        data = load_dataset(dataset, './data')
         print(data[0].__len__(), data[1].__len__(), data[2].__len__())
         class_distribution = {}
+        '''
         for d in data:
             print(f'\nData: {d}')
+
             for i in range(len(d)):
                 _, label = d[i]
                 if label not in class_distribution:
@@ -255,5 +281,14 @@ if __name__ == "__main__":
             
             # sort and print the class distribution
             class_distribution = dict(sorted(class_distribution.items(), key=lambda x: x[1], reverse=True))
-            for key, value in class_distribution.items():
-                print(f'{key}: {value}')
+            # for key, value in class_distribution.items():
+            #     print(f'{key}: {value}')
+
+            # print number of classes
+            print(f'Number of classes: {len(class_distribution)}')
+
+            # compute the class unbalance as the ratio between the number of samples in the most frequent class and the number of samples in the least frequent class
+            dist = list(class_distribution.values())
+            class_unbalance = max(dist) / min(dist)
+            print(f'Class unbalance: {class_unbalance}')
+        '''

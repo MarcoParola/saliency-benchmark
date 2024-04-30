@@ -1,8 +1,10 @@
 import hydra
 import torch
 import pytorch_lightning as pl
+import os
 
 from src.utils import load_model, load_dataset
+from src.models.classifier import ClassifierModule
 
 
 @hydra.main(config_path='config', config_name='config')
@@ -14,30 +16,43 @@ def main(cfg):
         cfg.seed = seed
     torch.manual_seed(cfg.seed)
 
-    train, val, test = load_dataset(cfg.dataset.name) 
-    train_loader = torch.utils.data.DataLoader(
-        train, 
+    data_dir = os.path.join(cfg.currentDir, cfg.dataset.path)
+    train, val, test = load_dataset(cfg.dataset.name, data_dir, cfg.dataset.resize)
+    train_loader = torch.utils.data.DataLoader(train, 
         batch_size=cfg.train.batch_size, 
         shuffle=True, 
         num_workers=cfg.train.num_workers)
-    val_loader = torch.utils.data.DataLoader(
-        val, 
+    val_loader = torch.utils.data.DataLoader(val, 
+        batch_size=cfg.train.batch_size, 
+        shuffle=False, 
+        num_workers=cfg.train.num_workers)
+    test_loader = torch.utils.data.DataLoader(test, 
         batch_size=cfg.train.batch_size, 
         shuffle=False, 
         num_workers=cfg.train.num_workers)
 
 
-    model = load_model(cfg.dataset.name, cfg.model)
+    model = ClassifierModule(
+        weights=cfg.model,
+        num_classes=cfg[cfg.dataset.name].n_classes, 
+        lr=cfg.train.lr,
+        max_epochs=cfg.train.max_epochs
+    )
 
     trainer = pl.Trainer(
         max_epochs=cfg.train.max_epochs,
+        devices=cfg.train.devices,
         accelerator=cfg.train.accelerator,
         logger=None, # TODO add logger
         log_every_n_steps=cfg.train.log_every_n_steps,
-        deterministic=True
+        #deterministic=True
     )
 
     trainer.fit(model, train_loader, val_loader)
+
+    trainer.test(model, test_loader)
+
+
 
 
 if __name__ == '__main__':
