@@ -5,158 +5,171 @@ import timm
 import detectors
 import numpy as np
 import os
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
 from src.saliency_method.sidu import sidu_interface
 
 
-def load_model(model_name, dataset):
-    model = None
+# def load_model(model_name, dataset):
+#     model = None
 
-    # CIFAR-10
-    if dataset == 'cifar10':
-        if model_name == 'resnet18':
-            model = timm.create_model("resnet18_cifar10", pretrained=True)
-        elif model_name == 'resnet34':
-            model = timm.create_model("resnet34_cifar10", pretrained=True)
-        elif model_name == 'resnet50':
-            model = timm.create_model("resnet50_cifar10", pretrained=True)
-        elif model_name == 'vgg16':
-            model = timm.create_model("vgg16_bn_cifar10", pretrained=True)
-        elif model_name == 'vgg19':
-            pass # TODO load model trained by us
-        elif model_name == 'convnext-b':
-            model = timm.create_model("hf-hub:anonauthors/cifar10-timm-convnext_base.fb_in1k", pretrained=True)
-        elif model_name == 'convnext-t':
-            pass # TODO load model trained by us
-        elif model_name == 'densenet121':
-            model = timm.create_model("edadaltocg/densenet121_cifar10", pretrained=True)
-        elif model_name == 'densenet169':
-            pass # TODO load model trained by us
-        elif model_name == 'vit-b':
-            model = timm.create_model("hf-hub:anonauthors/cifar10-timm-vit_base_patch16_224.orig_in21k_ft_in1k", pretrained=True)
+#     # CIFAR-10
+#     if dataset == 'cifar10':
+#         if model_name == 'resnet18':
+#             model = timm.create_model("resnet18_cifar10", pretrained=True)
+#         elif model_name == 'resnet34':
+#             model = timm.create_model("resnet34_cifar10", pretrained=True)
+#         elif model_name == 'resnet50':
+#             model = timm.create_model("resnet50_cifar10", pretrained=True)
+#         elif model_name == 'vgg16':
+#             model = timm.create_model("vgg16_bn_cifar10", pretrained=True)
+#         elif model_name == 'vgg19':
+#             pass # TODO load model trained by us
+#         elif model_name == 'convnext-b':
+#             model = timm.create_model("hf-hub:anonauthors/cifar10-timm-convnext_base.fb_in1k", pretrained=True)
+#         elif model_name == 'convnext-t':
+#             pass # TODO load model trained by us
+#         elif model_name == 'densenet121':
+#             model = timm.create_model("edadaltocg/densenet121_cifar10", pretrained=True)
+#         elif model_name == 'densenet169':
+#             pass # TODO load model trained by us
+#         elif model_name == 'vit-b':
+#             model = timm.create_model("hf-hub:anonauthors/cifar10-timm-vit_base_patch16_224.orig_in21k_ft_in1k", pretrained=True)
 
 
-    # CIFAR-100
-    elif dataset == 'cifar100':
+#     # CIFAR-100
+#     elif dataset == 'cifar100':
         
-        if model_name == 'resnet18':
-            model = timm.create_model("resnet18_cifar100", pretrained=True)
-        elif model_name == 'resnet34':
-            model = timm.create_model("resnet34_cifar100", pretrained=True)
-        elif model_name == 'resnet50':
-            model = timm.create_model("resnet50_cifar100", pretrained=True)
-        elif model_name == 'vgg16':
-            model = timm.create_model("vgg16_bn_cifar100", pretrained=True)
-        elif model_name == 'vgg19':
-            pass # TODO load model trained by us
-        elif model_name == 'convnext-b':
-            model = timm.create_model("hf-hub:anonauthors/cifar100-timm-convnext_base.fb_in1k", pretrained=True)
-        elif model_name == 'convnext-t':
-            pass # TODO load model trained by us
-        elif model_name == 'densenet121':
-            model = timm.create_model("densenet121_cifar100", pretrained=True)
-        elif model_name == 'densenet169':
-            pass # TODO load model trained by us
-        elif model_name == 'vit-b':
-            model = timm.create_model("hf-hub:anonauthors/cifar100-timm-vit_base_patch16_224.orig_in21k_ft_in1k", pretrained=True)
+#         if model_name == 'resnet18':
+#             model = timm.create_model("resnet18_cifar100", pretrained=True)
+#         elif model_name == 'resnet34':
+#             model = timm.create_model("resnet34_cifar100", pretrained=True)
+#         elif model_name == 'resnet50':
+#             model = timm.create_model("resnet50_cifar100", pretrained=True)
+#         elif model_name == 'vgg16':
+#             model = timm.create_model("vgg16_bn_cifar100", pretrained=True)
+#         elif model_name == 'vgg19':
+#             pass # TODO load model trained by us
+#         elif model_name == 'convnext-b':
+#             model = timm.create_model("hf-hub:anonauthors/cifar100-timm-convnext_base.fb_in1k", pretrained=True)
+#         elif model_name == 'convnext-t':
+#             pass # TODO load model trained by us
+#         elif model_name == 'densenet121':
+#             model = timm.create_model("densenet121_cifar100", pretrained=True)
+#         elif model_name == 'densenet169':
+#             pass # TODO load model trained by us
+#         elif model_name == 'vit-b':
+#             model = timm.create_model("hf-hub:anonauthors/cifar100-timm-vit_base_patch16_224.orig_in21k_ft_in1k", pretrained=True)
 
-    # Caltech101
-    elif dataset == 'caltech101':
-        if model_name == 'resnet18':
-            pass # TODO load model trained by us
-        elif model_name == 'resnet34':
-            pass # TODO load model trained by us
-        elif model_name == 'resnet50':
-            model = timm.create_model('hf-hub:anonauthors/caltech101-timm-resnet50', pretrained=True)
-        elif model_name == 'vgg16':
-            pass # TODO load model trained by us
-        elif model_name == 'vgg19':
-            pass # TODO load model trained by us
-        elif model_name == 'convnext-b':
-            model = timm.create_model('hf-hub:anonauthors/caltech101-timm-convnext_base.fb_in1k', pretrained=True)
-        elif model_name == 'convnext-t':
-            pass # TODO load model trained by us
-        elif model_name == 'densenet121':
-            pass # TODO load model trained by us
-        elif model_name == 'densenet169':
-            pass # TODO load model trained by us
-        elif model_name == 'vit-b':
-            model = timm.create_model("hf-hub:anonauthors/caltech101-timm-vit_base_patch16_224.orig_in21k_ft_in1k", pretrained=True)
+#     # Caltech101
+#     elif dataset == 'caltech101':
+#         if model_name == 'resnet18':
+#             pass # TODO load model trained by us
+#         elif model_name == 'resnet34':
+#             pass # TODO load model trained by us
+#         elif model_name == 'resnet50':
+#             model = timm.create_model('hf-hub:anonauthors/caltech101-timm-resnet50', pretrained=True)
+#         elif model_name == 'vgg16':
+#             pass # TODO load model trained by us
+#         elif model_name == 'vgg19':
+#             pass # TODO load model trained by us
+#         elif model_name == 'convnext-b':
+#             model = timm.create_model('hf-hub:anonauthors/caltech101-timm-convnext_base.fb_in1k', pretrained=True)
+#         elif model_name == 'convnext-t':
+#             pass # TODO load model trained by us
+#         elif model_name == 'densenet121':
+#             pass # TODO load model trained by us
+#         elif model_name == 'densenet169':
+#             pass # TODO load model trained by us
+#         elif model_name == 'vit-b':
+#             model = timm.create_model("hf-hub:anonauthors/caltech101-timm-vit_base_patch16_224.orig_in21k_ft_in1k", pretrained=True)
 
-    # ImageNet
-    elif dataset == 'imagenet':
-        if model_name == 'resnet18':
-            model = sidu.load_torch_model_by_string('ResNet18_Weights.IMAGENET1K_V1')
-        elif model_name == 'resnet34':
-            model = sidu.load_torch_model_by_string('ResNet34_Weights.IMAGENET1K_V1')
-        elif model_name == 'resnet50':
-            model = sidu.load_torch_model_by_string('ResNet50_Weights.IMAGENET1K_V1')
-        elif model_name == 'vgg16':
-            model = sidu.load_torch_model_by_string('VGG16_Weights.IMAGENET1K_V1')
-        elif model_name == 'vgg19':
-            model = sidu.load_torch_model_by_string('VGG19_Weights.IMAGENET1K_V1')
-        elif model_name == 'convnext-b':
-            model = sidu.load_torch_model_by_string('ConvNeXt_Base_Weights.IMAGENET1K_V1')
-        elif model_name == 'convnext-t':
-            model = sidu.load_torch_model_by_string('ConvNeXt_Tiny_Weights.IMAGENET1K_V1')
-        elif model_name == 'densenet121':
-            model = sidu.load_torch_model_by_string('DenseNet121_Weights.IMAGENET1K_V1')
-        elif model_name == 'densenet169':
-            model = sidu.load_torch_model_by_string('DenseNet169_Weights.IMAGENET1K_V1')
-        elif model_name == 'vit-b':
-            model = sidu.load_torch_model_by_string('ViT_B_16_Weights.IMAGENET1K_V1')
+#     # ImageNet
+#     elif dataset == 'imagenet':
+#         if model_name == 'resnet18':
+#             model = sidu.load_torch_model_by_string('ResNet18_Weights.IMAGENET1K_V1')
+#         elif model_name == 'resnet34':
+#             model = sidu.load_torch_model_by_string('ResNet34_Weights.IMAGENET1K_V1')
+#         elif model_name == 'resnet50':
+#             model = sidu.load_torch_model_by_string('ResNet50_Weights.IMAGENET1K_V1')
+#         elif model_name == 'vgg16':
+#             model = sidu.load_torch_model_by_string('VGG16_Weights.IMAGENET1K_V1')
+#         elif model_name == 'vgg19':
+#             model = sidu.load_torch_model_by_string('VGG19_Weights.IMAGENET1K_V1')
+#         elif model_name == 'convnext-b':
+#             model = sidu.load_torch_model_by_string('ConvNeXt_Base_Weights.IMAGENET1K_V1')
+#         elif model_name == 'convnext-t':
+#             model = sidu.load_torch_model_by_string('ConvNeXt_Tiny_Weights.IMAGENET1K_V1')
+#         elif model_name == 'densenet121':
+#             model = sidu.load_torch_model_by_string('DenseNet121_Weights.IMAGENET1K_V1')
+#         elif model_name == 'densenet169':
+#             model = sidu.load_torch_model_by_string('DenseNet169_Weights.IMAGENET1K_V1')
+#         elif model_name == 'vit-b':
+#             model = sidu.load_torch_model_by_string('ViT_B_16_Weights.IMAGENET1K_V1')
 
 
-    # Oxford-IIIT Pet
-    elif dataset == 'oxford-iiit-pet':
-        if model_name == 'resnet18':
-            pass # TODO load model trained by us
-        elif model_name == 'resnet34':
-            pass # TODO load model trained by us
-        elif model_name == 'resnet50':
-            model = timm.create_model('hf-hub:nateraw/resnet50-oxford-iiit-pet',pretrained=True)
-        elif model_name == 'vgg16':
-            pass # TODO load model trained by us
-        elif model_name == 'vgg19':
-            pass # TODO load model trained by us
-        elif model_name == 'convnext-b':
-            model = timm.create_model("hf-hub:anonauthors/oxford_pet-timm-convnext_base.fb_in1k", pretrained=True)
-        elif model_name == 'convnext-t':
-            pass # TODO load model trained by us
-        elif model_name == 'densenet121':
-            pass # TODO load model trained by us
-        elif model_name == 'densenet169':
-            pass # TODO load model trained by us
-        elif model_name == 'vit-b':
-            model = timm.create_model("hf-hub:anonauthors/oxford_pet-timm-vit_base_patch16_224.orig_in21k_ft_in1k", pretrained=True)
+#     # Oxford-IIIT Pet
+#     elif dataset == 'oxford-iiit-pet':
+#         if model_name == 'resnet18':
+#             pass # TODO load model trained by us
+#         elif model_name == 'resnet34':
+#             pass # TODO load model trained by us
+#         elif model_name == 'resnet50':
+#             model = timm.create_model('hf-hub:nateraw/resnet50-oxford-iiit-pet',pretrained=True)
+#         elif model_name == 'vgg16':
+#             pass # TODO load model trained by us
+#         elif model_name == 'vgg19':
+#             pass # TODO load model trained by us
+#         elif model_name == 'convnext-b':
+#             model = timm.create_model("hf-hub:anonauthors/oxford_pet-timm-convnext_base.fb_in1k", pretrained=True)
+#         elif model_name == 'convnext-t':
+#             pass # TODO load model trained by us
+#         elif model_name == 'densenet121':
+#             pass # TODO load model trained by us
+#         elif model_name == 'densenet169':
+#             pass # TODO load model trained by us
+#         elif model_name == 'vit-b':
+#             model = timm.create_model("hf-hub:anonauthors/oxford_pet-timm-vit_base_patch16_224.orig_in21k_ft_in1k", pretrained=True)
 
-    # SVHN
-    elif dataset == 'svhn':
-        if model_name == 'resnet18':
-            model = timm.create_model("resnet18_svhn", pretrained=True)
-        elif model_name == 'resnet34':
-            model = timm.create_model("resnet34_svhn", pretrained=True)
-        elif model_name == 'resnet50':
-            model = timm.create_model("resnet50_svhn", pretrained=True)
-        elif model_name == 'vgg16':
-            model = timm.create_model("vgg16_bn_svhn", pretrained=True)
-        elif model_name == 'vgg19':
-            pass # TODO load model trained by us
-        elif model_name == 'convnext-b':
-            pass # TODO load model trained by us
-        elif model_name == 'convnext-t':
-            pass # TODO load model trained by us
-        elif model_name == 'densenet121':
-            model = timm.create_model("densenet121_svhn", pretrained=True)
-        elif model_name == 'densenet169':
-            pass # TODO load model trained by us
-        elif model_name == 'vit-b':
-            model = timm.create_model("vit_base_patch16_224_in21k_ft_svhn", pretrained=True)
+#     # SVHN
+#     elif dataset == 'svhn':
+#         if model_name == 'resnet18':
+#             model = timm.create_model("resnet18_svhn", pretrained=True)
+#         elif model_name == 'resnet34':
+#             model = timm.create_model("resnet34_svhn", pretrained=True)
+#         elif model_name == 'resnet50':
+#             model = timm.create_model("resnet50_svhn", pretrained=True)
+#         elif model_name == 'vgg16':
+#             model = timm.create_model("vgg16_bn_svhn", pretrained=True)
+#         elif model_name == 'vgg19':
+#             pass # TODO load model trained by us
+#         elif model_name == 'convnext-b':
+#             pass # TODO load model trained by us
+#         elif model_name == 'convnext-t':
+#             pass # TODO load model trained by us
+#         elif model_name == 'densenet121':
+#             model = timm.create_model("densenet121_svhn", pretrained=True)
+#         elif model_name == 'densenet169':
+#             pass # TODO load model trained by us
+#         elif model_name == 'vit-b':
+#             model = timm.create_model("vit_base_patch16_224_in21k_ft_svhn", pretrained=True)
 
-    else:
-        raise ValueError(f'Unknown dataset: {dataset}')
+#     else:
+#         raise ValueError(f'Unknown dataset: {dataset}')
 
-    return model
+#     return model
+
+
+def get_early_stopping(patience=10):
+    """Returns an EarlyStopping callback
+    cfg: hydra config
+    """
+    early_stopping_callback = EarlyStopping(
+        monitor='val_loss',
+        mode='min',
+        patience=patience,
+    )
+    return early_stopping_callback
 
 def load_dataset(dataset, data_dir, resize=256, val_split=0.2, test_split=0.2):
 

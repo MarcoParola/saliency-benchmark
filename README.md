@@ -21,10 +21,18 @@ python -m venv env
 python -m pip install -r requirements.txt
 ```
 
+Next, create a new project on [Weights & Biases](https://wandb.ai/site) named `saliency-benchmark`. Edit `entity` parameter in [config.yaml](https://github.com/MarcoParola/saliency-benchmark/blob/main/config/config.yaml) by setting your wandb nick. Log in and paste your API key when prompted.
+```sh
+wandb login 
+```
+
 ## Usage
+A pretrained model fine-tuning can be run using `train.py` and specifying:
+- the `model` param from the following [string name](https://pytorch.org/vision/stable/models.html#table-of-all-available-classification-weights)
+- the `dataset.name` param from ... TODO prepare a list of supported dataset? 
 
 ```sh
-python train.py model=ResNet18_Weights.IMAGENET1K_V1 dataset.name=cifar10
+python train.py model=ResNet18_Weights.IMAGENET1K_V1 dataset.name=oxford-iiit-pet
 ```
 
 ```sh

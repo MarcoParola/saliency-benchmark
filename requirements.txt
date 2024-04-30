@@ -9,3 +9,5 @@ detectors
 gdown
 pytorch_lightning
 wandb
+omegaconf
+flatdict

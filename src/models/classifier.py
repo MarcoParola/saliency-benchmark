@@ -15,8 +15,6 @@ class ClassifierModule(LightningModule):
         self.num_classes = num_classes
         self.backbone, self.classifier, self.preprocess = self.return_backbone_and_classifier(weights)
         self.loss = torch.nn.CrossEntropyLoss()
-        #self.total_predictions = None
-        #self.total_labels = None
 
     def forward(self, x):
         self.backbone.eval()
@@ -36,20 +34,16 @@ class ClassifierModule(LightningModule):
         x = self.preprocess(imgs)
         y_hat = self(x)
         predictions = torch.argmax(y_hat, dim=1)
-        print('\nooo', predictions)
-        print('ooo', labels)
-        self.log('test_accuracy', accuracy_score(labels, predictions), on_step=False, on_epoch=True, logger=True)
-        self.log('recall', recall_score(labels, predictions, average='micro'), on_step=False, on_epoch=True, logger=True)
-        self.log('precision', precision_score(labels, predictions, average='micro'), on_step=False, on_epoch=True, logger=True)
-        self.log('f1', f1_score(labels, predictions, average='micro'), on_step=False, on_epoch=True, logger=True)
-
-        # this accumulation is necessary in order to log confusion matrix of all the test and not just the last step
-        # if self.total_labels is None:
-        #     self.total_labels = labels.numpy()
-        #     self.total_predictions = predictions.numpy()
-        # else:
-        #     self.total_labels = np.concatenate((self.total_labels, labels.numpy()), axis=None)
-        #     self.total_predictions = np.concatenate((self.total_predictions, predictions.numpy()), axis=None)
+        # compute metrics
+        accuracy = accuracy_score(labels.cpu().numpy(), predictions.cpu().numpy())
+        recall = recall_score(labels.cpu().numpy(), predictions.cpu().numpy(), average='macro')
+        precision = precision_score(labels.cpu().numpy(), predictions.cpu().numpy(), average='macro')
+        f1 = f1_score(labels.cpu().numpy(), predictions.cpu().numpy(), average='macro')
+        self.log('test_accuracy', accuracy, on_step=False, on_epoch=True)
+        self.log('test_recall', recall, on_step=False, on_epoch=True)
+        self.log('test_precision', precision, on_step=False, on_epoch=True)
+        self.log('test_f1', f1, on_step=False, on_epoch=True)
+        return accuracy
 
 
     def predict_step(self, batch, batch_idx, dataloader_idx=None):
@@ -68,14 +62,11 @@ class ClassifierModule(LightningModule):
         return [optimizer], [lr_scheduler_config]
 
     def _common_step(self, batch, batch_idx, stage):
-        torch.set_grad_enabled(True)
-
         imgs, labels = batch
         x = self.preprocess(imgs)
         y_hat = self(x)
         loss = self.loss(y_hat, labels)
-        self.log(f"{stage}_loss", loss, on_step=True, on_epoch=True)
-
+        self.log(f"{stage}_loss", loss, on_step=False, on_epoch=True)
         return loss
 
     def return_backbone_and_classifier(self, model_name):
