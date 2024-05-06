@@ -1,25 +1,28 @@
 defaults:
   - _self_
   - dataset_info
+  - target_layers
 
 currentDir: ${hydra:runtime.cwd}
 
-method: sidu
+saliency_method: sidu
 model: ResNet18_Weights.IMAGENET1K_V1
 seed: 42
+checkpoint: null
 
 dataset: 
   name: cifar10
   path: ./data
-  resize: 64
+  resize: 256
 
 train:
   batch_size: 16
-  max_epochs: 3
-  lr: 1e-5
+  max_epochs: 1
+  lr: 5e-5
   weight_decay: 5e-4
-  accelerator: cpu
+  accelerator: gpu
   devices: 1
+  device: "cuda"
   save_path: ./models
   num_workers: 1
   log_every_n_steps: 100

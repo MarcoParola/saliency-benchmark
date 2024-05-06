@@ -3,7 +3,7 @@ import torch
 import pytorch_lightning as pl
 import os
 
-from src.utils import load_dataset, get_early_stopping
+from src.utils import load_dataset, get_early_stopping, get_save_model_callback
 from src.models.classifier import ClassifierModule
 from src.log import get_loggers
 
@@ -22,6 +22,9 @@ def main(cfg):
     # callback
     callbacks = list()
     callbacks.append(get_early_stopping(cfg.train.patience))
+    model_save_dir = os.path.join(cfg.currentDir, cfg.checkpoint, cfg.model + cfg.dataset.name )
+    callbacks.append(get_save_model_callback(model_save_dir))
+
 
     # loggers
     loggers = get_loggers(cfg)

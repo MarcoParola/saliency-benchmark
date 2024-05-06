@@ -6,8 +6,10 @@ import detectors
 import numpy as np
 import os
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+from pytorch_lightning.callbacks import ModelCheckpoint
 
 from src.saliency_method.sidu import sidu_interface
+from src.saliency_method.gradcam import gradcam_interface
 
 
 # def load_model(model_name, dataset):
@@ -160,6 +162,20 @@ from src.saliency_method.sidu import sidu_interface
 #     return model
 
 
+def get_save_model_callback(save_path):
+    """Returns a ModelCheckpoint callback
+    cfg: hydra config
+    """
+    save_model_callback = ModelCheckpoint(
+        monitor='val_loss',
+        mode='min',
+        dirpath=save_path,
+        filename='model-{epoch:02d}-{val_loss:.2f}',
+        save_top_k=1,
+        save_last=True,
+    )
+    return save_model_callback
+
 def get_early_stopping(patience=10):
     """Returns an EarlyStopping callback
     cfg: hydra config
@@ -258,9 +274,15 @@ def load_dataset(dataset, data_dir, resize=256, val_split=0.2, test_split=0.2):
     return train, val, test
 
 
-def load_saliecy_method(method):
+def load_saliecy_method(method, model, device='cpu', **kwargs):
     if method == 'sidu':
-        return sidu_interface
+        return sidu_interface(model, device=device, **kwargs)
+    elif method == 'gradcam':
+        return gradcam_interface(model, device=device, **kwargs)
+    elif method == 'rise':
+        pass
+    elif method == 'lime':
+        pass
     else:
         raise ValueError(f'Unknown saliency method: {method}')
         

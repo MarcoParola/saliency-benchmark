@@ -1,0 +1,3 @@
+resnet18: model.layer4.1.conv2
+
+# TODO Add target layers for other models

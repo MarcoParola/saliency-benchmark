@@ -1,5 +1,6 @@
 
 from pytorch_sidu import sidu
+import torch
 
 class sidu_interface():
     def __init__(self, model, device='cpu', **kwargs):
@@ -8,7 +9,8 @@ class sidu_interface():
         self.kwargs = kwargs
 
     def generate_saliency(self, input_image, target_class=None, target_layer=None):
-        saliency_maps = sidu(self.model, target_layer, input_image)
+        device = torch.device(self.device)
+        saliency_maps = sidu(self.model, target_layer, input_image, device=device)
         return saliency_maps
 
 
