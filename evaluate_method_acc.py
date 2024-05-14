@@ -1,11 +1,18 @@
 import hydra
 import torch
+import torchvision
+import math
 import pytorch_lightning as pl
 import os
+import numpy as np
+from tqdm import tqdm
+from scipy.ndimage.filters import gaussian_filter
 
 from src.utils import load_dataset, get_early_stopping, load_saliecy_method
 from src.models.classifier import ClassifierModule
 from src.log import get_loggers
+from src.metrics import Insertion, Deletion
+
 
 @hydra.main(config_path='config', config_name='config')
 def main(cfg):
@@ -21,17 +28,14 @@ def main(cfg):
         max_epochs=cfg.train.max_epochs
     )
     model_path = os.path.join(cfg.currentDir, cfg.checkpoint)
-    print(model_path)
-    print(os.path.exists(model_path))
-    print(torch.load(model_path).keys())
     model.load_state_dict(torch.load(model_path)['state_dict'])
-    
 
     # load test dataset
     data_dir = os.path.join(cfg.currentDir, cfg.dataset.path)
     train, val, test = load_dataset(cfg.dataset.name, data_dir, cfg.dataset.resize)
-    dataloader =  torch.utils.data.DataLoader(test, batch_size=2, shuffle=False)
+    dataloader =  torch.utils.data.DataLoader(test, batch_size=cfg.train.batch_size, shuffle=True)
 
+    # load saliency method
     saliency_method = load_saliecy_method(cfg.saliency_method, model, device=cfg.train.device)
 
     trainer = pl.Trainer(
@@ -44,23 +48,66 @@ def main(cfg):
 
     #trainer.test(model, dataloader)
 
-    from pytorch_sidu.utils.utils import load_torch_model_by_string
-    model = load_torch_model_by_string('ResNet34_Weights.IMAGENET1K_V1')
-    
-    for image, _ in dataloader:
-        saliency = saliency_method.generate_saliency(input_image=image, target_layer='model.layer4.1.conv2')
+    device = torch.device(cfg.train.device)
+
+    target_layer = cfg.target_layers[cfg.model.split('_Weights')[0]]
+
+    model.eval()
+    model_softmax = torch.nn.Sequential(model, torch.nn.Softmax(dim=-1))
+
+    input_size = 64
+
+    insertion = Insertion(model_softmax, input_size, cfg.train.batch_size, baseline="grey")
+    deletion = Deletion(model_softmax, input_size, cfg.train.batch_size, baseline="grey")
+
+    model_softmax.eval()
+
+    ins_auc_dict = dict()
+    del_auc_dict = dict()
+
+    for j, (images, labels) in enumerate(dataloader):
+        print('Batch:', j)
+        saliency = saliency_method.generate_saliency(input_image=images, target_layer=target_layer).to(cfg.train.device)
+
         
-        # plot image + saliency map and saliency map
-        from matplotlib import pyplot as plt
-        fig, ax = plt.subplots(1, 2)
-        ax[0].imshow(image[0].permute(1, 2, 0))
-        ax[0].imshow(saliency[0].cpu().detach().numpy(), cmap='jet', alpha=0.4)
-        ax[1].imshow(saliency[0].cpu().detach().numpy(), cmap='jet')
-        plt.show()
+        for i in range(images.shape[0]):
+            image = images[i]
+            image = image.to(cfg.train.device)
+            saliency_map = saliency[i]
+            saliency_map = saliency_map.to(cfg.train.device)
+            labels = labels.to(cfg.train.device)
+            ins_auc, ins_details = insertion(image, saliency, class_idx=labels[i])
+            del_auc, del_details = deletion(image, saliency, class_idx=labels[i])
+            print('Deletion - {:.5f}\nInsertion - {:.5f}'.format(del_auc, ins_auc))
 
-        # TODO compute partial accuracy of the saliency maps for this batch
+            ins_auc_dict[labels[i].item()] = ins_auc
+            del_auc_dict[labels[i].item()] = del_auc
+        '''
 
-    # TODO aggregate the average accuracy of the saliency maps for the whole dataset
+        
+        
+        for i in range(images.shape[0]):
+            # plot image + saliency map and saliency map
+            from matplotlib import pyplot as plt
+            fig, ax = plt.subplots(1, 2)
+            ax[0].imshow(images[i].permute(1, 2, 0))
+            ax[0].imshow(saliency[i].cpu().detach().numpy(), cmap='jet', alpha=0.4)
+            ax[1].imshow(saliency[i].cpu().detach().numpy(), cmap='jet')
+            plt.show()
+        '''
+        
+
+        if j == 0:
+            break
+    print('----------------------------------------------------------------')
+    # move dict to cpu and print the mean
+    ins_auc_dict = {k: v.cpu().numpy() for k, v in ins_auc_dict.items()}
+    del_auc_dict = {k: v.cpu().numpy() for k, v in del_auc_dict.items()}
+    print('Insertion AUC:', np.mean(list(ins_auc_dict.values())))
+    print('Deletion AUC:', np.mean(list(del_auc_dict.values())))
+    
+        
+
     
     
 
