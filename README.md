@@ -39,13 +39,12 @@ python train.py model=ResNet18_Weights.IMAGENET1K_V1 dataset.name=oxford-iiit-pe
 After fine-tuned a pre-trained model, you can reload it and evaluate its explainability by using `evaluate_method_acc.py`. Specify the following params:
 - the `model` param from the following [string name](https://pytorch.org/vision/stable/models.html#table-of-all-available-classification-weights)
 - the `dataset.name` param from the following list: `cifar10`, `cifar100`, `caltech101`, `imagenet`, `oxford-iiit-pet`, `svhn`, `mnist`, `fashionmnist`
-- the `saliency_method` param from the following: `sidu`, `gradcam`, `lime`, `rise`.
+- the `saliency.method` param from the following: `sidu`, `gradcam`, `lime`, `rise`.
 - the `checkpoint` param by choosing among the pretrained model checkpoints in the output folder. Pleas note, in the following example the `checkpoint` param is valued according the windows path format.
 
 Please note, `evaluate_method_acc.py` requires a target layer depending on the model and the saliency method. They are declared in `config\target_layers.yaml`. Edit this configuration file to set different target layers.
 
 ```sh
-python evaluate_method_acc.py model=ResNet18_Weights.IMAGENET1K_V1 dataset.name=cifar10 saliency_method=sidu checkpoint=outputs\2024-05-06\10-59-38\lightning_logs\rqdgdc07\checkpoints\epoch\=0-step\=2500.ckpt
+python evaluate_method_acc.py model=VGG11_Weights.IMAGENET1K_V1 dataset.name=cifar10 saliency.method=sidu checkpoint=outputs\VGG11\epoch\=0-step\=2500.ckpt saliency.obscure=grey
 ```
-
 

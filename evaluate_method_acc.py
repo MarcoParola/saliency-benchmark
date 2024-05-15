@@ -11,7 +11,7 @@ from scipy.ndimage.filters import gaussian_filter
 from src.utils import load_dataset, get_early_stopping, load_saliecy_method
 from src.models.classifier import ClassifierModule
 from src.log import get_loggers
-from src.metrics import Insertion, Deletion
+from src.metrics import Insertion, Deletion, AverageDropIncrease
 
 
 @hydra.main(config_path='config', config_name='config')
@@ -27,8 +27,10 @@ def main(cfg):
         lr=cfg.train.lr,
         max_epochs=cfg.train.max_epochs
     )
-    model_path = os.path.join(cfg.currentDir, cfg.checkpoint)
-    model.load_state_dict(torch.load(model_path)['state_dict'])
+    if cfg.dataset.name != 'imagenet':
+        model_path = os.path.join(cfg.currentDir, cfg.checkpoint)
+        model.load_state_dict(torch.load(model_path)['state_dict'])
+
 
     # load test dataset
     data_dir = os.path.join(cfg.currentDir, cfg.dataset.path)
@@ -36,7 +38,7 @@ def main(cfg):
     dataloader =  torch.utils.data.DataLoader(test, batch_size=cfg.train.batch_size, shuffle=True)
 
     # load saliency method
-    saliency_method = load_saliecy_method(cfg.saliency_method, model, device=cfg.train.device)
+    saliency_method = load_saliecy_method(cfg.saliency.method, model, device=cfg.train.device)
 
     trainer = pl.Trainer(
         max_epochs=cfg.train.max_epochs,
@@ -57,8 +59,9 @@ def main(cfg):
 
     input_size = 64
 
-    insertion = Insertion(model_softmax, input_size, cfg.train.batch_size, baseline="grey")
-    deletion = Deletion(model_softmax, input_size, cfg.train.batch_size, baseline="grey")
+    insertion = Insertion(model_softmax, input_size, cfg.train.batch_size, baseline=cfg.saliency.obscure)
+    deletion = Deletion(model_softmax, input_size, cfg.train.batch_size, baseline=cfg.saliency.obscure)
+    avg_drop_inc = AverageDropIncrease(model_softmax)
 
     model_softmax.eval()
 
@@ -68,7 +71,6 @@ def main(cfg):
     for j, (images, labels) in enumerate(dataloader):
         print('Batch:', j)
         saliency = saliency_method.generate_saliency(input_image=images, target_layer=target_layer).to(cfg.train.device)
-
         
         for i in range(images.shape[0]):
             image = images[i]
@@ -78,7 +80,8 @@ def main(cfg):
             labels = labels.to(cfg.train.device)
             ins_auc, ins_details = insertion(image, saliency, class_idx=labels[i])
             del_auc, del_details = deletion(image, saliency, class_idx=labels[i])
-            print('Deletion - {:.5f}\nInsertion - {:.5f}'.format(del_auc, ins_auc))
+            #avgdrop, increase = avg_drop_inc(image, saliency_map, class_idx=labels[i])
+            #print('Deletion - {:.5f}\nInsertion - {:.5f}'.format(del_auc, ins_auc))
 
             ins_auc_dict[labels[i].item()] = ins_auc
             del_auc_dict[labels[i].item()] = del_auc
@@ -91,13 +94,18 @@ def main(cfg):
             from matplotlib import pyplot as plt
             fig, ax = plt.subplots(1, 2)
             ax[0].imshow(images[i].permute(1, 2, 0))
-            ax[0].imshow(saliency[i].cpu().detach().numpy(), cmap='jet', alpha=0.4)
+            ax[0].imshow(saliency[i].cpu().detach().numpy(), cmap='jet', alpha=0.3)
+            ax[0].set_title('actual label: {}'.format(labels[i]))
             ax[1].imshow(saliency[i].cpu().detach().numpy(), cmap='jet')
+            #pred = model_softmax(images[i].unsqueeze(0).to(cfg.train.device)).argmax().item()
+            #ax[1].set_title('predicted label: {}'.format(pred))
             plt.show()
         '''
         
+        
+        
 
-        if j == 0:
+        if j == 5:
             break
     print('----------------------------------------------------------------')
     # move dict to cpu and print the mean

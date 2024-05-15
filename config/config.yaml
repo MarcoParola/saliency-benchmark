@@ -5,7 +5,7 @@ defaults:
 
 currentDir: ${hydra:runtime.cwd}
 
-saliency_method: sidu
+
 model: ResNet18_Weights.IMAGENET1K_V1
 seed: 42
 checkpoint: null
@@ -15,8 +15,12 @@ dataset:
   path: ./data
   resize: 256
 
+saliency:
+  method: sidu
+  obscure: grey
+
 train:
-  batch_size: 16
+  batch_size: 4
   max_epochs: 1
   lr: 5e-5
   weight_decay: 5e-4

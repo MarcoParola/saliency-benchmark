@@ -1,165 +1,13 @@
 import torch
 import torchvision
-from transformers import AutoModelForImageClassification, AutoFeatureExtractor
-import timm
-import detectors
 import numpy as np
 import os
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks import ModelCheckpoint
+import datasets
 
 from src.saliency_method.sidu import sidu_interface
 from src.saliency_method.gradcam import gradcam_interface
-
-
-# def load_model(model_name, dataset):
-#     model = None
-
-#     # CIFAR-10
-#     if dataset == 'cifar10':
-#         if model_name == 'resnet18':
-#             model = timm.create_model("resnet18_cifar10", pretrained=True)
-#         elif model_name == 'resnet34':
-#             model = timm.create_model("resnet34_cifar10", pretrained=True)
-#         elif model_name == 'resnet50':
-#             model = timm.create_model("resnet50_cifar10", pretrained=True)
-#         elif model_name == 'vgg16':
-#             model = timm.create_model("vgg16_bn_cifar10", pretrained=True)
-#         elif model_name == 'vgg19':
-#             pass # TODO load model trained by us
-#         elif model_name == 'convnext-b':
-#             model = timm.create_model("hf-hub:anonauthors/cifar10-timm-convnext_base.fb_in1k", pretrained=True)
-#         elif model_name == 'convnext-t':
-#             pass # TODO load model trained by us
-#         elif model_name == 'densenet121':
-#             model = timm.create_model("edadaltocg/densenet121_cifar10", pretrained=True)
-#         elif model_name == 'densenet169':
-#             pass # TODO load model trained by us
-#         elif model_name == 'vit-b':
-#             model = timm.create_model("hf-hub:anonauthors/cifar10-timm-vit_base_patch16_224.orig_in21k_ft_in1k", pretrained=True)
-
-
-#     # CIFAR-100
-#     elif dataset == 'cifar100':
-        
-#         if model_name == 'resnet18':
-#             model = timm.create_model("resnet18_cifar100", pretrained=True)
-#         elif model_name == 'resnet34':
-#             model = timm.create_model("resnet34_cifar100", pretrained=True)
-#         elif model_name == 'resnet50':
-#             model = timm.create_model("resnet50_cifar100", pretrained=True)
-#         elif model_name == 'vgg16':
-#             model = timm.create_model("vgg16_bn_cifar100", pretrained=True)
-#         elif model_name == 'vgg19':
-#             pass # TODO load model trained by us
-#         elif model_name == 'convnext-b':
-#             model = timm.create_model("hf-hub:anonauthors/cifar100-timm-convnext_base.fb_in1k", pretrained=True)
-#         elif model_name == 'convnext-t':
-#             pass # TODO load model trained by us
-#         elif model_name == 'densenet121':
-#             model = timm.create_model("densenet121_cifar100", pretrained=True)
-#         elif model_name == 'densenet169':
-#             pass # TODO load model trained by us
-#         elif model_name == 'vit-b':
-#             model = timm.create_model("hf-hub:anonauthors/cifar100-timm-vit_base_patch16_224.orig_in21k_ft_in1k", pretrained=True)
-
-#     # Caltech101
-#     elif dataset == 'caltech101':
-#         if model_name == 'resnet18':
-#             pass # TODO load model trained by us
-#         elif model_name == 'resnet34':
-#             pass # TODO load model trained by us
-#         elif model_name == 'resnet50':
-#             model = timm.create_model('hf-hub:anonauthors/caltech101-timm-resnet50', pretrained=True)
-#         elif model_name == 'vgg16':
-#             pass # TODO load model trained by us
-#         elif model_name == 'vgg19':
-#             pass # TODO load model trained by us
-#         elif model_name == 'convnext-b':
-#             model = timm.create_model('hf-hub:anonauthors/caltech101-timm-convnext_base.fb_in1k', pretrained=True)
-#         elif model_name == 'convnext-t':
-#             pass # TODO load model trained by us
-#         elif model_name == 'densenet121':
-#             pass # TODO load model trained by us
-#         elif model_name == 'densenet169':
-#             pass # TODO load model trained by us
-#         elif model_name == 'vit-b':
-#             model = timm.create_model("hf-hub:anonauthors/caltech101-timm-vit_base_patch16_224.orig_in21k_ft_in1k", pretrained=True)
-
-#     # ImageNet
-#     elif dataset == 'imagenet':
-#         if model_name == 'resnet18':
-#             model = sidu.load_torch_model_by_string('ResNet18_Weights.IMAGENET1K_V1')
-#         elif model_name == 'resnet34':
-#             model = sidu.load_torch_model_by_string('ResNet34_Weights.IMAGENET1K_V1')
-#         elif model_name == 'resnet50':
-#             model = sidu.load_torch_model_by_string('ResNet50_Weights.IMAGENET1K_V1')
-#         elif model_name == 'vgg16':
-#             model = sidu.load_torch_model_by_string('VGG16_Weights.IMAGENET1K_V1')
-#         elif model_name == 'vgg19':
-#             model = sidu.load_torch_model_by_string('VGG19_Weights.IMAGENET1K_V1')
-#         elif model_name == 'convnext-b':
-#             model = sidu.load_torch_model_by_string('ConvNeXt_Base_Weights.IMAGENET1K_V1')
-#         elif model_name == 'convnext-t':
-#             model = sidu.load_torch_model_by_string('ConvNeXt_Tiny_Weights.IMAGENET1K_V1')
-#         elif model_name == 'densenet121':
-#             model = sidu.load_torch_model_by_string('DenseNet121_Weights.IMAGENET1K_V1')
-#         elif model_name == 'densenet169':
-#             model = sidu.load_torch_model_by_string('DenseNet169_Weights.IMAGENET1K_V1')
-#         elif model_name == 'vit-b':
-#             model = sidu.load_torch_model_by_string('ViT_B_16_Weights.IMAGENET1K_V1')
-
-
-#     # Oxford-IIIT Pet
-#     elif dataset == 'oxford-iiit-pet':
-#         if model_name == 'resnet18':
-#             pass # TODO load model trained by us
-#         elif model_name == 'resnet34':
-#             pass # TODO load model trained by us
-#         elif model_name == 'resnet50':
-#             model = timm.create_model('hf-hub:nateraw/resnet50-oxford-iiit-pet',pretrained=True)
-#         elif model_name == 'vgg16':
-#             pass # TODO load model trained by us
-#         elif model_name == 'vgg19':
-#             pass # TODO load model trained by us
-#         elif model_name == 'convnext-b':
-#             model = timm.create_model("hf-hub:anonauthors/oxford_pet-timm-convnext_base.fb_in1k", pretrained=True)
-#         elif model_name == 'convnext-t':
-#             pass # TODO load model trained by us
-#         elif model_name == 'densenet121':
-#             pass # TODO load model trained by us
-#         elif model_name == 'densenet169':
-#             pass # TODO load model trained by us
-#         elif model_name == 'vit-b':
-#             model = timm.create_model("hf-hub:anonauthors/oxford_pet-timm-vit_base_patch16_224.orig_in21k_ft_in1k", pretrained=True)
-
-#     # SVHN
-#     elif dataset == 'svhn':
-#         if model_name == 'resnet18':
-#             model = timm.create_model("resnet18_svhn", pretrained=True)
-#         elif model_name == 'resnet34':
-#             model = timm.create_model("resnet34_svhn", pretrained=True)
-#         elif model_name == 'resnet50':
-#             model = timm.create_model("resnet50_svhn", pretrained=True)
-#         elif model_name == 'vgg16':
-#             model = timm.create_model("vgg16_bn_svhn", pretrained=True)
-#         elif model_name == 'vgg19':
-#             pass # TODO load model trained by us
-#         elif model_name == 'convnext-b':
-#             pass # TODO load model trained by us
-#         elif model_name == 'convnext-t':
-#             pass # TODO load model trained by us
-#         elif model_name == 'densenet121':
-#             model = timm.create_model("densenet121_svhn", pretrained=True)
-#         elif model_name == 'densenet169':
-#             pass # TODO load model trained by us
-#         elif model_name == 'vit-b':
-#             model = timm.create_model("vit_base_patch16_224_in21k_ft_svhn", pretrained=True)
-
-#     else:
-#         raise ValueError(f'Unknown dataset: {dataset}')
-
-#     return model
 
 
 def get_save_model_callback(save_path):
@@ -230,7 +78,29 @@ def load_dataset(dataset, data_dir, resize=256, val_split=0.2, test_split=0.2):
     # ImageNet
     elif dataset == 'imagenet':
         from torchvision.datasets import ImageFolder
-        test = ImageFolder(root='./data/imagenet/val', transform=transform)
+        val = datasets.load_dataset('mrm8488/ImageNet1K-val', split='train')
+
+        class ImageNetDataset(torch.utils.data.Dataset):
+            def __init__(self, dataset, transform=None):
+                self.dataset = dataset
+                self.transform = transform
+
+            def __len__(self):
+                return len(self.dataset)
+
+            def __getitem__(self, idx):
+                img, lbl = self.dataset[idx]['image'], self.dataset[idx]['label']
+                if self.transform:
+                    img = self.transform(img)
+                # check if the image contains 1 channels
+                if img.shape[0] == 1:
+                    img = img.repeat(3, 1, 1)
+                return img, lbl
+
+        val = ImageNetDataset(val, transform)
+        train = val
+        test = val
+        
 
     # Oxford-IIIT Pet
     elif dataset == 'oxford-iiit-pet':
@@ -289,21 +159,41 @@ def load_saliecy_method(method, model, device='cpu', **kwargs):
 
 if __name__ == "__main__":
 
-    datasets = [
+    data = [
         # 'cifar10',
         # 'cifar100',
         # 'caltech101',
-        # 'imagenet',
+        'imagenet',
         # 'oxford-iiit-pet',
         # 'svhn',
-        'mnist',
-        'fashionmnist',
+        # 'mnist',
+        # 'fashionmnist',
     ]
-    for dataset in datasets:
+    for dataset in data:
         print(f'\n\nDataset: {dataset}')
         data = load_dataset(dataset, './data')
         print(data[0].__len__(), data[1].__len__(), data[2].__len__())
-        class_distribution = {}
+
+        test = data[2]
+        print(test)
+        import matplotlib.pyplot as plt
+        for i in range(10):
+            img, lbl = test.__getitem__(i)
+            print(img.shape, lbl)
+            plt.imshow(img.permute(1, 2, 0))
+            plt.title(lbl)
+            plt.show()
+
+        # import matplotlib.pyplot as plt
+        # dataloader = torch.utils.data.DataLoader(data[2], batch_size=4, shuffle=True)
+        # for i, batch in enumerate(dataloader):
+        #     for j in range(4):
+        #         img, lbl = batch[0][j], batch[1][j]
+        #         print(img.shape, lbl)
+        #         plt.imshow(img.permute(1, 2, 0))
+        #         plt.title(lbl)
+        #         plt.show()
+
         '''
         for d in data:
             print(f'\nData: {d}')
