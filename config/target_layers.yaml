@@ -2,5 +2,4 @@ target_layers:
   ResNet18: model.layer4.1.conv2
   VGG11: model.features.20
   VGG13: model.features.24
-
-# TODO Add target layers for other models
+  EfficientNet_B0: model.features.8

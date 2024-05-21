@@ -57,10 +57,10 @@ def main(cfg):
     model.eval()
     model_softmax = torch.nn.Sequential(model, torch.nn.Softmax(dim=-1))
 
-    input_size = 64
+    n_steps = cfg.metrics.n_steps
 
-    insertion = Insertion(model_softmax, input_size, cfg.train.batch_size, baseline=cfg.saliency.obscure)
-    deletion = Deletion(model_softmax, input_size, cfg.train.batch_size, baseline=cfg.saliency.obscure)
+    insertion = Insertion(model_softmax, n_steps, cfg.train.batch_size, percentage=1., baseline=cfg.metrics.ins_obscure)
+    deletion = Deletion(model_softmax, n_steps, cfg.train.batch_size, percentage=1., baseline=cfg.metrics.del_obscure)
     avg_drop_inc = AverageDropIncrease(model_softmax)
 
     model_softmax.eval()
@@ -69,7 +69,7 @@ def main(cfg):
     del_auc_dict = dict()
 
     for j, (images, labels) in enumerate(dataloader):
-        print('Batch:', j)
+        print('\n\nBatch:', j)
         saliency = saliency_method.generate_saliency(input_image=images, target_layer=target_layer).to(cfg.train.device)
         
         for i in range(images.shape[0]):
@@ -81,14 +81,36 @@ def main(cfg):
             ins_auc, ins_details = insertion(image, saliency, class_idx=labels[i])
             del_auc, del_details = deletion(image, saliency, class_idx=labels[i])
             #avgdrop, increase = avg_drop_inc(image, saliency_map, class_idx=labels[i])
-            #print('Deletion - {:.5f}\nInsertion - {:.5f}'.format(del_auc, ins_auc))
+            print('Deletion - {:.5f}\nInsertion - {:.5f}'.format(del_auc, ins_auc))
 
             ins_auc_dict[labels[i].item()] = ins_auc
             del_auc_dict[labels[i].item()] = del_auc
-        '''
+        
 
+        # remap ins_details and del_details on 100 points
+
+        #for i in range(images.shape[0]):
+            from matplotlib import pyplot as plt
+            fig, ax = plt.subplots(1, 4)
+            ax[0].imshow(images[i].permute(1, 2, 0))
+            ax[1].imshow(images[i].permute(1, 2, 0))
+            ax[1].imshow(saliency[i].cpu().detach().numpy(), cmap='jet', alpha=0.4)
+
+            ax[2].plot(ins_details.cpu().numpy())
+            # paint the area under the curve
+            ax[2].fill_between(np.arange(ins_details.shape[0]), ins_details.cpu().numpy(), 0, alpha=0.5)
+            #ax[2].set_ylim([0, 1])            
+            ax[2].set_title('Insertion AUC: {:.5f}'.format(ins_auc_dict[labels[i].item()]))
+
+            ax[3].plot(del_details.cpu().numpy())
+            ax[3].fill_between(np.arange(del_details.shape[0]), del_details.cpu().numpy(), 0, alpha=0.5)
+            #ax[3].set_ylim([0, 1])
+            #ax[3].set_xlim([0, del_details.shape[0]])
+            ax[3].set_title('Deletion AUC: {:.5f}'.format(del_auc_dict[labels[i].item()]))
+
+            plt.savefig('sample_{}.png'.format(i))
         
-        
+        '''
         for i in range(images.shape[0]):
             # plot image + saliency map and saliency map
             from matplotlib import pyplot as plt
@@ -101,12 +123,11 @@ def main(cfg):
             #ax[1].set_title('predicted label: {}'.format(pred))
             plt.show()
         '''
-        
-        
-        
 
-        if j == 5:
+        if j == 0:
             break
+        
+        
     print('----------------------------------------------------------------')
     # move dict to cpu and print the mean
     ins_auc_dict = {k: v.cpu().numpy() for k, v in ins_auc_dict.items()}

@@ -9,7 +9,7 @@ def blur_image(input_image):
     """
     blur the input image tensor
     """
-    return torchvision.transforms.functional.gaussian_blur(input_image, kernel_size=[11, 11], sigma=[5,5])
+    return torchvision.transforms.functional.gaussian_blur(input_image, kernel_size=[127, 127], sigma=[17,17])
 
 def grey_image(input_image):
     """
@@ -24,7 +24,7 @@ class RelevanceMetric:
     """
     base class for Insertion and Deletion
     """
-    def __init__(self, model, n_steps, batch_size, baseline="blur"):
+    def __init__(self, model, n_steps, batch_size, percentage=.5, baseline="blur"):
         self.model = model
         self.n_steps = n_steps
         self.batch_size = batch_size
@@ -34,6 +34,8 @@ class RelevanceMetric:
             self.baseline_fn = grey_image
         else:
             self.baseline_fn = blur_image
+
+        self.percentage = percentage
 
     def __call__(self, image, saliency_map, class_idx=None, *args, **kwargs):
         assert image.shape[-2:] == saliency_map.shape[-2:], "Image and saliency map should have the same resolution"
@@ -59,11 +61,9 @@ class RelevanceMetric:
 
             samples = self.generate_samples(sorted_index, image, baseline)
 
-            # print('baseline:', baseline.shape)
-            # print('samples:', samples.shape)
-            # print('n_batches:', n_batches)
-            # print('pixels_per_steps:', pixels_per_steps)
-            # print('pixels_per_batch:', pixels_per_batch)
+            
+            n_steps_cut_by_percentage = samples.shape[0]
+            samples = samples[:int(self.percentage * self.n_steps)]
 
             # from matplotlib import pyplot as plt
             # for i in range(samples.shape[0]):
@@ -71,7 +71,8 @@ class RelevanceMetric:
             #     plt.savefig('sample_{}.png'.format(i))
 
             # running sum of the scores
-            scores = torch.zeros(self.n_steps).to(image.device)
+
+            scores = torch.zeros(n_steps_cut_by_percentage).to(image.device)
 
             self.model = self.model.to(image.device)
 
@@ -85,7 +86,7 @@ class RelevanceMetric:
                     res = self.model(img)
                     scores[start:end] = torch.softmax(res, dim=1)[:, class_idx]
 
-            auc = torch.sum(scores) / self.n_steps
+            auc = torch.sum(scores) / n_steps_cut_by_percentage
             return auc, scores
 
     def generate_samples(self, *args, **kwargs):
@@ -93,8 +94,8 @@ class RelevanceMetric:
 
 
 class Insertion(RelevanceMetric):
-    def __init__(self, model, step, batch_size, baseline="blur"):
-        super(Insertion, self).__init__(model, step, batch_size, baseline=baseline)
+    def __init__(self, model, step, batch_size, percentage=.5, baseline="blur"):
+        super(Insertion, self).__init__(model, step, batch_size, percentage=percentage, baseline=baseline)
 
     def generate_samples(self, index, image, baseline):
         h, w = image.shape[-2:]
@@ -110,8 +111,8 @@ class Insertion(RelevanceMetric):
 
 
 class Deletion(RelevanceMetric):
-    def __init__(self, model, step, batch_size, baseline="blur"):
-        super(Deletion, self).__init__(model, step, batch_size, baseline=baseline)
+    def __init__(self, model, step, batch_size, percentage=.5, baseline="blur"):
+        super(Deletion, self).__init__(model, step, batch_size, percentage=percentage, baseline=baseline)
 
     def generate_samples(self, index, image, baseline):
         h, w = image.shape[-2:]

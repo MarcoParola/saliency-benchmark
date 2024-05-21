@@ -17,7 +17,11 @@ dataset:
 
 saliency:
   method: sidu
-  obscure: grey
+
+metrics:
+  n_steps: 128
+  del_obscure: blur
+  ins_obscure: grey
 
 train:
   batch_size: 4
@@ -39,4 +43,6 @@ log:
 wandb:
   project: saliency-benchmark
   entity: marcoparola
+
+
 
