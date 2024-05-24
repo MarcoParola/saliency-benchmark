@@ -7,7 +7,7 @@ import os
 
 class ClassifierModule(LightningModule):
 
-    def __init__(self, weights, num_classes, lr=10e-6, max_epochs=100):
+    def __init__(self, weights, num_classes, finetune=False, lr=10e-6, max_epochs=100):
         super().__init__()
         self.save_hyperparameters()
         assert "." in weights, "Weights must be <MODEL>.<WEIGHTS>"
@@ -18,12 +18,24 @@ class ClassifierModule(LightningModule):
         weights_cls = getattr(torchvision.models, weights_cls)
         weights = getattr(weights_cls, weights_name)
         self.model = getattr(torchvision.models, self.model_name)(weights=weights)
+
+        if not finetune:
+            for param in self.model.parameters():
+                param.requires_grad = False
+            
+        # method to set the classifier head independently of the model (as head names are different for each model)
         self._set_model_classifier(weights_cls, num_classes)
+
         self.preprocess = weights.transforms()
         self.loss = torch.nn.CrossEntropyLoss()
 
+        
+
     def forward(self, x):
         return self.model(x)
+
+    def on_validation_epoch_end(self):
+        self.log('epoch', self.current_epoch)
 
     def training_step(self, batch, batch_idx):
         return self._common_step(batch, batch_idx, "train")
@@ -82,88 +94,6 @@ class ClassifierModule(LightningModule):
         loss = self.loss(y_hat, labels)
         self.log(f"{stage}_loss", loss, on_step=False, on_epoch=True)
         return loss
-
-    def return_backbone_and_classifier(self, model_name):
-        backbone, classifier, preproc = None, None, None
-
-        weights_cls = model_name.split(".")[0]
-        weights_name = model_name.split(".")[1]
-        name = model_name.split("_Weights")[0].lower()
-        weights_cls = getattr(torchvision.models, weights_cls)
-        weights = getattr(weights_cls, weights_name)
-        model = getattr(torchvision.models, name)(weights=weights)
-        weights_cls = str(weights_cls)
-
-        '''
-        
-        if 'ResNet' in model_name:
-            backbone = torch.nn.Sequential(*(list(model.children())[:-1]))
-            classifier = torch.nn.Linear(model.fc.in_features, self.num_classes)
-
-        elif 'EfficientNet' in model_name:
-            backbone = torch.nn.Sequential(*(list(model.children())[:-1]))
-            classifier = torch.nn.Linear(model.classifier[1].in_features, self.num_classes)
-
-        elif 'VGG' in model_name:
-            backbone = torch.nn.Sequential(*(list(model.children())[:-1]))
-            classifier = torch.nn.Linear(model.classifier[0].in_features, self.num_classes)
-        '''
-
-
-        if "ConvNeXt" in weights_cls:
-            model.classifier = torch.nn.Sequential(
-                torch.nn.Dropout(0.5),
-                torch.nn.Flatten(1),
-                torch.nn.Linear(model.classifier[2].in_features, self.num_classes),
-            )
-        elif "EfficientNet" in weights_cls:
-            model.classifier = torch.nn.Sequential(
-                torch.nn.Dropout(0.5),
-                torch.nn.Linear(model.classifier[1].in_features, self.num_classes),
-            )
-        elif "MobileNet" in weights_cls or "VGG" in weights_cls:
-            model.classifier = torch.nn.Sequential(
-                torch.nn.Dropout(0.5),
-                torch.nn.Linear(model.classifier[0].in_features, self.num_classes),
-            )
-        elif "DenseNet" in weights_cls:
-            model.classifier = torch.nn.Sequential(
-                torch.nn.Dropout(0.5),
-                torch.nn.Linear(model.classifier.in_features, self.num_classes),
-            )
-        elif "MaxVit" in weights_cls:
-            model.classifier = torch.nn.Sequential(
-                torch.nn.Dropout(0.5),
-                torch.nn.AdaptiveAvgPool2d(1),
-                torch.nn.Flatten(),
-                torch.nn.Linear(model.classifier[5].in_features, self.num_classes),
-            )
-        elif "ResNet" in weights_cls or "RegNet" in weights_cls or "GoogLeNet" in weights_cls:
-            model.fc = torch.nn.Sequential(
-                torch.nn.Dropout(0.5),
-                torch.nn.Linear(model.fc.in_features, self.num_classes),
-            )
-        elif "Swin" in weights_cls:
-            model.head = torch.nn.Sequential(
-                torch.nn.Dropout(0.5),
-                torch.nn.Linear(model.head.in_features, self.num_classes),
-            )
-        elif "ViT" in weights_cls:
-            model.heads = torch.nn.Sequential(
-                torch.nn.Dropout(0.5),
-                torch.nn.Linear(model.hidden_dim, self.num_classes),
-            )
-        elif "SqueezeNet1_1" in weights_cls or "SqueezeNet1_0" in weights_cls:
-            model.classifier = torch.nn.Sequential(
-                torch.nn.Dropout(0.5),
-                torch.nn.Conv2d(512, self.num_classes, kernel_size=(1, 1), stride=(1, 1)),
-                torch.nn.ReLU(),
-                torch.nn.AvgPool2d(kernel_size=13, stride=1, padding=0)
-            )
-
-        return model, weights.transforms()
-
-
 
 
     def _set_model_classifier(self, weights_cls, num_classes):

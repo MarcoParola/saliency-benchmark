@@ -15,3 +15,9 @@ svhn:
 
 oxford-iiit-pet:
   n_classes: 37
+
+mnist:
+  n_classes: 10
+
+fashionmnist:
+  n_classes: 10

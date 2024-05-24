@@ -10,6 +10,7 @@ from scipy.ndimage.filters import gaussian_filter
 
 from src.utils import load_dataset, get_early_stopping, load_saliecy_method
 from src.models.classifier import ClassifierModule
+from src.datasets.dataset import SaliencyDataset
 from src.log import get_loggers
 from src.metrics import Insertion, Deletion, AverageDropIncrease
 
@@ -24,17 +25,20 @@ def main(cfg):
     model = ClassifierModule(
         weights=cfg.model,
         num_classes=cfg[cfg.dataset.name].n_classes, 
+        finetune=cfg.train.finetune,
         lr=cfg.train.lr,
         max_epochs=cfg.train.max_epochs
     )
     if cfg.dataset.name != 'imagenet':
         model_path = os.path.join(cfg.currentDir, cfg.checkpoint)
         model.load_state_dict(torch.load(model_path)['state_dict'])
+    model.eval()
 
 
     # load test dataset
     data_dir = os.path.join(cfg.currentDir, cfg.dataset.path)
     train, val, test = load_dataset(cfg.dataset.name, data_dir, cfg.dataset.resize)
+    test = SaliencyDataset(test)
     dataloader =  torch.utils.data.DataLoader(test, batch_size=cfg.train.batch_size, shuffle=True)
 
     # load saliency method
@@ -45,7 +49,6 @@ def main(cfg):
         devices=cfg.train.devices,
         accelerator=cfg.train.accelerator,
         logger=loggers,
-        log_every_n_steps=cfg.train.log_every_n_steps,
     )
 
     #trainer.test(model, dataloader)
@@ -69,7 +72,7 @@ def main(cfg):
     del_auc_dict = dict()
 
     for j, (images, labels) in enumerate(dataloader):
-        print('\n\nBatch:', j)
+        #print('\n\nBatch:', j)
         saliency = saliency_method.generate_saliency(input_image=images, target_layer=target_layer).to(cfg.train.device)
         
         for i in range(images.shape[0]):
@@ -81,7 +84,7 @@ def main(cfg):
             ins_auc, ins_details = insertion(image, saliency, class_idx=labels[i])
             del_auc, del_details = deletion(image, saliency, class_idx=labels[i])
             #avgdrop, increase = avg_drop_inc(image, saliency_map, class_idx=labels[i])
-            print('Deletion - {:.5f}\nInsertion - {:.5f}'.format(del_auc, ins_auc))
+            #print('Deletion - {:.5f}\nInsertion - {:.5f}'.format(del_auc, ins_auc))
 
             ins_auc_dict[labels[i].item()] = ins_auc
             del_auc_dict[labels[i].item()] = del_auc
@@ -89,6 +92,7 @@ def main(cfg):
 
         # remap ins_details and del_details on 100 points
 
+        '''
         #for i in range(images.shape[0]):
             from matplotlib import pyplot as plt
             fig, ax = plt.subplots(1, 4)
@@ -110,7 +114,7 @@ def main(cfg):
 
             plt.savefig('sample_{}.png'.format(i))
         
-        '''
+        
         for i in range(images.shape[0]):
             # plot image + saliency map and saliency map
             from matplotlib import pyplot as plt
@@ -123,10 +127,9 @@ def main(cfg):
             #ax[1].set_title('predicted label: {}'.format(pred))
             plt.show()
         '''
-
-        if j == 0:
-            break
         
+        if j == 15:
+            break
         
     print('----------------------------------------------------------------')
     # move dict to cpu and print the mean

@@ -8,7 +8,7 @@ currentDir: ${hydra:runtime.cwd}
 
 model: ResNet18_Weights.IMAGENET1K_V1
 seed: 42
-checkpoint: null
+checkpoint: checkpoints
 
 dataset: 
   name: cifar10
@@ -25,16 +25,16 @@ metrics:
 
 train:
   batch_size: 4
-  max_epochs: 1
-  lr: 5e-5
+  max_epochs: 20
+  lr: 1e-6
   weight_decay: 5e-4
   accelerator: gpu
   devices: 1
   device: "cuda"
   save_path: ./models
   num_workers: 1
-  log_every_n_steps: 100
-  patience: 5
+  patience: 4
+  finetune: False
 
 log:
   path: ./logs
