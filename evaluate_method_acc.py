@@ -112,8 +112,8 @@ def main(cfg):
             #ax[3].set_xlim([0, del_details.shape[0]])
             ax[3].set_title('Deletion AUC: {:.5f}'.format(del_auc_dict[labels[i].item()]))
 
-            plt.savefig('sample_{}.png'.format(i))
-        
+            #plt.savefig('sample_{}.png'.format(i))
+            plt.show()
         
         for i in range(images.shape[0]):
             # plot image + saliency map and saliency map
@@ -128,7 +128,7 @@ def main(cfg):
             plt.show()
         '''
         
-        if j == 15:
+        if j == 5: # stop after 5 batches, just for testing
             break
         
     print('----------------------------------------------------------------')

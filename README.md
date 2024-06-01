@@ -45,7 +45,7 @@ After fine-tuned a pre-trained model, you can reload it and evaluate its explain
 Please note, `evaluate_method_acc.py` requires a target layer depending on the model and the saliency method. They are declared in `config\target_layers.yaml`. Edit this configuration file to set different target layers.
 
 ```sh
-python evaluate_method_acc.py model=VGG11_Weights.IMAGENET1K_V1 dataset.name=cifar10 saliency.method=sidu checkpoint=outputs\VGG11\epoch\=0-step\=2500.ckpt
+python evaluate_method_acc.py model=VGG11_Weights.IMAGENET1K_V1 dataset.name=cifar10 saliency.method=gradcam checkpoint=outputs\VGG11\epoch\=0-step\=2500.ckpt
 ```
 
 

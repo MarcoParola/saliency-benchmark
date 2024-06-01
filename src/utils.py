@@ -79,7 +79,7 @@ def load_dataset(dataset, data_dir, resize=256, val_split=0.2, test_split=0.2):
     elif dataset == 'imagenet':
         from torchvision.datasets import ImageFolder
         val = datasets.load_dataset('mrm8488/ImageNet1K-val', split='train')
-
+        
         class ImageNetDataset(torch.utils.data.Dataset):
             def __init__(self, dataset, transform=None):
                 self.dataset = dataset

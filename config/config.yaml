@@ -19,12 +19,12 @@ saliency:
   method: sidu
 
 metrics:
-  n_steps: 128
+  n_steps: 32
   del_obscure: blur
   ins_obscure: grey
 
 train:
-  batch_size: 4
+  batch_size: 1
   max_epochs: 20
   lr: 1e-6
   weight_decay: 5e-4
