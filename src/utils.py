@@ -8,6 +8,8 @@ import datasets
 
 from src.saliency_method.sidu import sidu_interface
 from src.saliency_method.gradcam import gradcam_interface
+from src.saliency_method.rise import rise_interface
+from src.saliency_method.lime import lime_interface
 
 
 def get_save_model_callback(save_path):
@@ -150,9 +152,9 @@ def load_saliecy_method(method, model, device='cpu', **kwargs):
     elif method == 'gradcam':
         return gradcam_interface(model, device=device, **kwargs)
     elif method == 'rise':
-        pass
+        return rise_interface(model, device=device, **kwargs)
     elif method == 'lime':
-        pass
+        return lime_interface(model, device=device, **kwargs)
     else:
         raise ValueError(f'Unknown saliency method: {method}')
         
