@@ -116,33 +116,37 @@ if __name__ == '__main__':
     import torchvision.datasets as datasets
     import matplotlib.pyplot as plt
 
-    # Load the model and data
+    # Carica il modello e i dati
     model = resnet34(pretrained=True)
     model.eval()
     transform = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor()])
     dataset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
-    dataloader = data.DataLoader(dataset, batch_size=1, shuffle=True)
+    dataloader = data.DataLoader(dataset, batch_size=32, shuffle=True)
 
-    for i, (image, _) in enumerate(dataloader):
-        
-        image = image.to('cpu')
+    # Inizializza l'interfaccia RISE
+    method = rise_interface(model, device='cpu', input_size=(224, 224))
 
-        # Initialize the RISE_Interface
-        method = rise_interface(model, device='cpu', input_size=(224, 224))
+    for i, (images, _) in enumerate(dataloader):
 
-        # Generate and plot the saliency map
-        saliency = method.generate_saliency(image)
+        images = images.to('cpu')
 
-        # Plot the saliency map and the image
-        plt.figure(figsize=(5, 2.5))
-        plt.subplot(1, 2, 1)
-        plt.imshow(image.squeeze().permute(1, 2, 0))
-        plt.axis('off')
-        plt.subplot(1, 2, 2)
-        plt.imshow(image.squeeze().permute(1, 2, 0))
-        plt.imshow(saliency.squeeze().detach().numpy(), cmap='jet', alpha=0.4)
-        plt.axis('off')
-        plt.show()
+        # Genera le mappe di salienza per tutte le immagini nel batch
+        saliencies = [method.generate_saliency(image.unsqueeze(0)) for image in images]
+
+        # Visualizza le mappe di salienza e le immagini originali
+        for j in range(images.size(0)):
+            image = images[j]
+            saliency = saliencies[j]
+
+            plt.figure(figsize=(5, 2.5))
+            plt.subplot(1, 2, 1)
+            plt.imshow(image.squeeze().permute(1, 2, 0))
+            plt.axis('off')
+            plt.subplot(1, 2, 2)
+            plt.imshow(image.squeeze().permute(1, 2, 0))
+            plt.imshow(saliency.squeeze().detach().numpy(), cmap='jet', alpha=0.4)
+            plt.axis('off')
+            plt.show()
 
         if i == 10:
             break
