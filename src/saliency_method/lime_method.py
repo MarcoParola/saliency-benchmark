@@ -1,7 +1,14 @@
+import hydra
+import os
+
+from torchvision.models import resnet34, ResNet34_Weights
+
+from src.models.classifier import ClassifierModule
 from lime.lime_image import LimeImageExplainer
 import torch
 
-class lime_interface():
+
+class lime_interface:
     def __init__(self, model, device='cpu', **kwargs):
         self.model = model.to(device)
         self.device = device
@@ -24,84 +31,98 @@ class lime_interface():
         return probs.cpu().numpy()
 
     def generate_saliency(self, input_images, target_class=None, target_layer=None):
-        # Move the images to the specified device
-        images = input_images.to(self.device)
-
-        # Convert images to numpy arrays
-        images_np = images.permute(0, 2, 3, 1).cpu().numpy()  # Convert batch to numpy arrays
-
         # Initialize LimeImageExplainer
         explainer = LimeImageExplainer()
 
-        # Initialize the list to store saliency maps for the batch
-        batch_saliency_maps = []
+        # Iterate over each image in the batch
+        saliency_maps = []
+        for input_image in input_images:
+            # Move the image to the specified device
+            image = input_image.to(self.device)
 
-        for image_np in images_np:
-            # Generate explanations using the explainer for each image in the batch
+            # Convert image to numpy array
+            image_np = image.squeeze().permute(1, 2, 0).cpu().numpy()
+
+            # Generate explanations using the explainer
             explanation = explainer.explain_instance(
                 image_np,
                 self.batch_predict,
-                top_labels=1 if target_class is None else [target_class],
+                top_labels=1 if target_class is None else target_class,
                 hide_color=None,
                 num_samples=100
             )
 
             # Get the target class if not specified
             if target_class is None:
-                target_class = explanation.top_labels[0]
+                target_class_value = explanation.top_labels[0]
 
             # Get the image and mask for the specified class
             _, mask = explanation.get_image_and_mask(
-                target_class,
+                target_class_value,
                 positive_only=False,
                 num_features=15,
                 hide_rest=False
             )
 
-            # Append the saliency map to the batch_saliency_maps list
-            batch_saliency_maps.append(mask)
+            #saliency_maps.append(mask)
+            saliency_maps.append(torch.tensor(mask, dtype=torch.float32))
 
-        saliency_maps = torch.tensor(batch_saliency_maps).to(self.device)
+        saliency_maps = torch.stack(saliency_maps)
 
         return saliency_maps
 
 
-# main for testing the interface of sidu made for this project
-if __name__ == "__main__":
-
-    import torch
-    from torchvision import models, transforms, datasets
-    from torch.utils.data import DataLoader
+# main for testing the interface of lime made for this project
+@hydra.main(config_path='../../config', config_name='config', version_base=None)
+def main(cfg):
     import matplotlib.pyplot as plt
+    import torchvision.transforms as transforms
+    import torchvision.datasets as datasets
+    import torch.utils.data as data
 
     # Load the model and data
-    model = models.resnet34(pretrained=True)
+    # model = resnet34(weights=ResNet34_Weights.IMAGENET1K_V1)
+    model = ClassifierModule(
+        weights=cfg.model,
+        num_classes=cfg[cfg.dataset.name].n_classes,
+        finetune=cfg.train.finetune,
+        lr=cfg.train.lr,
+        max_epochs=cfg.train.max_epochs
+    )
+
+    if cfg.dataset.name != 'imagenet':
+        model_path = os.path.join(cfg.mainDir, cfg.checkpoint)
+        model.load_state_dict(torch.load(model_path, map_location=cfg.train.device)['state_dict'])
+        # model.load_state_dict(torch.load(model_path, map_location=cfg.train.device)['state_dict'])
+
     model.eval()
     transform = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor()])
-    dataset = datasets.CIFAR10(root='./data', train=False, download=False, transform=transform)
-    dataloader = DataLoader(dataset, batch_size=8, shuffle=True)
+    dataset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
+    dataloader = data.DataLoader(dataset, batch_size=cfg.train.batch_size, shuffle=True)
 
-    # Load the batch of images
+    # Load the images
     images, _ = next(iter(dataloader))
     images = images.to('cpu')
 
-    # Initialize lime_interface
-    lime = lime_interface(model, device='cpu')
+    # Initialize the Saliency method
+    method = lime_interface(model, device='cpu')
+    saliency_maps = method.generate_saliency(images)
 
-    # Generate saliency maps for the batch of images
-    saliency_maps = lime.generate_saliency(images)
-
-    # Plot the saliency maps and the images
+    # Plot the saliency map and the image for each image in the batch
     for i in range(images.size(0)):
-        image = images[i].permute(1, 2, 0).numpy()
-        saliency_map = saliency_maps[i].squeeze().detach().numpy()
+        image = images[i]
+        saliency = saliency_maps[i]
 
         plt.figure(figsize=(5, 2.5))
         plt.subplot(1, 2, 1)
-        plt.imshow(image)
+        plt.imshow(image.squeeze().permute(1, 2, 0))
         plt.axis('off')
         plt.subplot(1, 2, 2)
-        plt.imshow(image)
-        plt.imshow(saliency_map, cmap='jet', alpha=0.4)
+        plt.imshow(image.squeeze().permute(1, 2, 0))
+        plt.imshow(saliency.squeeze().detach().numpy(), cmap='jet', alpha=0.4)
         plt.axis('off')
         plt.show()
+
+
+if __name__ == '__main__':
+    main()
