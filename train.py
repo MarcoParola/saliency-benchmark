@@ -70,7 +70,7 @@ def main(cfg):
 
     trainer.fit(model, train_loader, val_loader)
 
-    trainer.test(model, test_loader)
+    #trainer.test(model, test_loader)
 
 
 

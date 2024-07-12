@@ -26,6 +26,9 @@ class ClassifierModule(LightningModule):
         # method to set the classifier head independently of the model (as head names are different for each model)
         self._set_model_classifier(weights_cls, num_classes)
 
+        # Adding Softmax at the end of the model
+        self.model = torch.nn.Sequential(self.model, torch.nn.Softmax(dim=1))
+
         self.preprocess = weights.transforms()
         self.loss = torch.nn.CrossEntropyLoss()
 
