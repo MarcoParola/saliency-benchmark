@@ -1,3 +1,6 @@
+import hydra
+import os
+from src.models.classifier import ClassifierModule
 import numpy as np
 import torch
 import torch.nn as nn
@@ -58,6 +61,8 @@ class RISE(nn.Module):
         torch.save(self.masks, filepath)
 
     def forward(self, x):
+        #print("Shape of input image (x):", x.shape)
+        #print("Shape of masks (self.masks):", self.masks.shape)
         # x: input image. (1, 3, H, W)
         device = x.device
 
@@ -66,8 +71,11 @@ class RISE(nn.Module):
         # shape (n_masks, 3, H, W)
         masked_x = torch.mul(self.masks, x.to('cpu').data)
 
+        #print("Shape of masked input (masked_x):", masked_x.shape)
+
         for i in range(0, self.n_masks, self.n_batch):
             input = masked_x[i:min(i + self.n_batch, self.n_masks)].to(device)
+            #print("Shape of input to the model (input):", input.shape)
             out = self.model(input)
             probs.append(torch.softmax(out, dim=1).to('cpu').data)
 
@@ -88,6 +96,8 @@ class RISE(nn.Module):
         saliency -= m.view(n_classes, 1, 1)
         M, _ = torch.max(saliency.view(n_classes, -1), dim=1)
         saliency /= M.view(n_classes, 1, 1)
+
+        #print("Shape of saliency map (saliency):", saliency.shape)
         return saliency.data
 
 
@@ -98,6 +108,7 @@ class rise_interface():
         self.device = device
         self.kwargs = kwargs
 
+    '''
     def generate_saliency(self, input_image, target_class=None, target_layer=None):
         # Initialize the RISE method with the model
         rise_model = RISE(self.model)
@@ -106,34 +117,71 @@ class rise_interface():
         saliency_maps = rise_model(input_image)
         saliency_maps = saliency_maps[0, :]
         return saliency_maps
+    '''
 
+    def generate_saliency(self, input_images, target_class=None, target_layer=None):
+        # Initialize the RISE method with the model
+        rise_model = RISE(self.model)
+
+        # Initialize the tensor to store saliency maps for the batch
+        batch_saliencies = []
+
+        # Generate the saliency maps for each image in the batch
+        for image in input_images:
+            # Generate the saliency map for the current image
+            saliency_map = rise_model(image.unsqueeze(0).to(self.device))
+            saliency_map = saliency_map[0, :]  # Assuming saliency_map is of shape (1, num_channels, height, width)
+
+            # Append the saliency map to the batch_saliencies list
+            batch_saliencies.append(saliency_map)
+
+        # Stack the saliency maps along the batch dimension
+        saliency_maps = torch.stack(batch_saliencies)
+
+        return saliency_maps
 
 # main for testing the interface of RISE made for this project
-if __name__ == '__main__':
-    from torchvision.models import resnet34
-    import torchvision.transforms as transforms
-    import torch.utils.data as data
-    import torchvision.datasets as datasets
+@hydra.main(config_path='../../config', config_name='config', version_base=None)
+def main(cfg):
+    from torchvision.models import resnet34, ResNet34_Weights
     import matplotlib.pyplot as plt
+    import torchvision.transforms as transforms
+    import torchvision.datasets as datasets
+    import torch.utils.data as data
 
     # Load the model and data
-    model = resnet34(pretrained=True)
+    # model = resnet34(weights=ResNet34_Weights.IMAGENET1K_V1)
+    model = ClassifierModule(
+        weights=cfg.model,
+        num_classes=cfg[cfg.dataset.name].n_classes,
+        finetune=cfg.train.finetune,
+        lr=cfg.train.lr,
+        max_epochs=cfg.train.max_epochs
+    )
+
+    if cfg.dataset.name != 'imagenet':
+        model_path = os.path.join(cfg.mainDir, cfg.checkpoint)
+        model.load_state_dict(torch.load(model_path, map_location=cfg.train.device)['state_dict'])
+        # model.load_state_dict(torch.load(model_path, map_location=cfg.train.device)['state_dict'])
+
     model.eval()
     transform = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor()])
     dataset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
-    dataloader = data.DataLoader(dataset, batch_size=1, shuffle=True)
+    dataloader = data.DataLoader(dataset, batch_size=cfg.train.batch_size, shuffle=True)
 
-    for i, (image, _) in enumerate(dataloader):
-        
-        image = image.to('cpu')
+    # Load the image
+    images, _ = next(iter(dataloader))
+    images = images.to('cpu')
 
-        # Initialize the RISE_Interface
-        method = rise_interface(model, device='cpu', input_size=(224, 224))
+    # Initialize the Saliency method
+    method = rise_interface(model, device=cfg.train.device, input_size=(224, 224))
+    saliency_maps = method.generate_saliency(images)
 
-        # Generate and plot the saliency map
-        saliency = method.generate_saliency(image)
+    # Plot the saliency map and the image for each image in the batch
+    for i in range(images.size(0)):
+        image = images[i]
+        saliency = saliency_maps[i]
 
-        # Plot the saliency map and the image
         plt.figure(figsize=(5, 2.5))
         plt.subplot(1, 2, 1)
         plt.imshow(image.squeeze().permute(1, 2, 0))
@@ -144,5 +192,6 @@ if __name__ == '__main__':
         plt.axis('off')
         plt.show()
 
-        if i == 10:
-            break
+
+if __name__ == '__main__':
+    main()

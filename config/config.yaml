@@ -6,31 +6,32 @@ defaults:
 currentDir: ${hydra:runtime.cwd}
 
 
-model: ResNet18_Weights.IMAGENET1K_V1
+model: VGG11_Weights.IMAGENET1K_V1
 seed: 42
 checkpoint: checkpoints
 
 dataset: 
-  name: cifar10
+  name: imagenet
   path: ./data
-  resize: 256
+  resize: 224
 
 saliency:
-  method: sidu
+  method: rise
 
 metrics:
   n_steps: 32
   del_obscure: blur
   ins_obscure: grey
 
+
 train:
   batch_size: 1
   max_epochs: 20
   lr: 1e-6
   weight_decay: 5e-4
-  accelerator: gpu
+  accelerator: cpu
   devices: 1
-  device: "cuda"
+  device: "cpu"
   save_path: ./models
   num_workers: 1
   patience: 4

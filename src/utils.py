@@ -9,7 +9,7 @@ import datasets
 from src.saliency_method.sidu import sidu_interface
 from src.saliency_method.gradcam import gradcam_interface
 from src.saliency_method.rise import rise_interface
-from src.saliency_method.lime import lime_interface
+from src.saliency_method.lime_method import lime_interface
 
 
 def get_save_model_callback(save_path):

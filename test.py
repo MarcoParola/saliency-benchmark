@@ -37,23 +37,23 @@ def main(cfg):
     train = SaliencyDataset(train)
     val = SaliencyDataset(val)
     test = SaliencyDataset(test)
-    train_loader = torch.utils.data.DataLoader(train, 
-        batch_size=cfg.train.batch_size, 
-        shuffle=True, 
+    train_loader = torch.utils.data.DataLoader(train,
+        batch_size=cfg.train.batch_size,
+        shuffle=True,
         num_workers=cfg.train.num_workers)
-    val_loader = torch.utils.data.DataLoader(val, 
-        batch_size=cfg.train.batch_size, 
-        shuffle=False, 
+    val_loader = torch.utils.data.DataLoader(val,
+        batch_size=cfg.train.batch_size,
+        shuffle=False,
         num_workers=cfg.train.num_workers)
-    test_loader = torch.utils.data.DataLoader(test, 
-        batch_size=cfg.train.batch_size, 
-        shuffle=False, 
+    test_loader = torch.utils.data.DataLoader(test,
+        batch_size=cfg.train.batch_size,
+        shuffle=False,
         num_workers=cfg.train.num_workers)
 
 
     model = ClassifierModule(
         weights=cfg.model,
-        num_classes=cfg[cfg.dataset.name].n_classes, 
+        num_classes=cfg[cfg.dataset.name].n_classes,
         finetune=cfg.train.finetune,
         lr=cfg.train.lr,
         max_epochs=cfg.train.max_epochs
@@ -68,9 +68,14 @@ def main(cfg):
         #deterministic=True
     )
 
-    trainer.fit(model, train_loader, val_loader)
+    if cfg.dataset.name != 'imagenet':
+        model_path = os.path.join(cfg.currentDir, cfg.checkpoint)
+        model.load_state_dict(torch.load(model_path)['state_dict'])
+        # model.load_state_dict(torch.load(model_path, map_location=cfg.train.device)['state_dict'])
 
-    #trainer.test(model, test_loader)
+    model.eval()
+
+    trainer.test(model, test_loader)
 
 
 

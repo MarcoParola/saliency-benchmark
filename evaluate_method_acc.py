@@ -73,16 +73,22 @@ def main(cfg):
 
     for j, (images, labels) in enumerate(dataloader):
         #print('\n\nBatch:', j)
-        saliency = saliency_method.generate_saliency(input_image=images, target_layer=target_layer).to(cfg.train.device)
-        
-        for i in range(images.shape[0]):
+        #saliency = saliency_method.generate_saliency(input_image=images, target_layer=target_layer).to(cfg.train.device)
+
+        images = images.to('cpu')
+
+        # Genera le mappe di salienza per tutte le immagini nel batch
+        saliencies = [saliency_method.generate_saliency(image.unsqueeze(0)) for image in images]
+
+        for i in range(images.size(0)):
             image = images[i]
             image = image.to(cfg.train.device)
-            saliency_map = saliency[i]
+            #saliency_map = saliency[i]
+            saliency_map = saliencies[i]
             saliency_map = saliency_map.to(cfg.train.device)
             labels = labels.to(cfg.train.device)
-            ins_auc, ins_details = insertion(image, saliency, class_idx=labels[i])
-            del_auc, del_details = deletion(image, saliency, class_idx=labels[i])
+            ins_auc, ins_details = insertion(image, saliencies, class_idx=labels[i])
+            del_auc, del_details = deletion(image, saliencies, class_idx=labels[i])
             #avgdrop, increase = avg_drop_inc(image, saliency_map, class_idx=labels[i])
             #print('Deletion - {:.5f}\nInsertion - {:.5f}'.format(del_auc, ins_auc))
 

@@ -3,7 +3,7 @@ target_layers:
   ResNet18: model.layer4.1.conv2
   ResNet34: model.layer4.2.conv1
   ResNet50: model.layer4.2.conv3
-  VGG11: model.features.20
+  VGG11: model.0.features.20
   VGG13: model.features.24
   VGG16: model.features.30
   EfficientNet_B0: model.features.8
