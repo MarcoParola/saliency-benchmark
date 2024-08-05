@@ -11,17 +11,16 @@
         3. predizione dell'immagini mascherate
         4. aggiornamento dei valori parziali delle metriche
 '''
-import os
 
-import hydra
-import numpy as np
+import os
 import torch
 import torchvision
 from matplotlib import pyplot as plt
 from sklearn.metrics import auc
 
 
-def plot_auc_curve(x, y, method_name):
+def save_auc_curve(x, y, method_name):
+    """Plot and save the AUC curve for the saliency method."""
     plt.figure()
     plt.plot(x, y, label=f'AUC = {auc(x, y):.2f}')
     plt.xlabel('Fraction of top pixels')
@@ -34,34 +33,38 @@ def plot_auc_curve(x, y, method_name):
 
 class SaliencyMetrics:
     def __init__(self, model, n_pixels):
+        """Initialize with the model and number of pixels to modify per iteration."""
         self.model = model
         self.n_pixels = n_pixels
 
     def __call__(self, image, saliency_map, class_label, start_with_blurred):
+        """Evaluate the saliency map using insertion or deletion method."""
         h, w = saliency_map.shape
 
+        # Choose the starting image: blurred or original
         if start_with_blurred:
-            working_image = torchvision.transforms.functional.gaussian_blur(image, kernel_size=[127, 127],
-                                                                            sigma=[17, 17]).clone()
+            working_image = torchvision.transforms.functional.gaussian_blur(
+                image, kernel_size=[127, 127], sigma=[17, 17]
+            ).clone()
             method_name = "insertion"
         else:
             working_image = image.clone()
             method_name = "deletion"
 
-        # Flatten saliency map and sort the indices in descending order
+        # Sort the saliency map indices in descending order
         sorted_index = torch.flip(saliency_map.view(-1).argsort(), dims=[0])
 
         start_idx = 0
         iteration = 0
         predictions = []
 
+        # Initial prediction score for the original image
         prediction = self.model(image.unsqueeze(0))
         class_score = prediction[0, class_label].item()
-
         predictions.append(class_score)
 
+        # Iteratively mask the image and record model predictions
         while start_idx < h * w:
-            # Select the next n_pixels indices starting from start_idx
             end_idx = min(start_idx + self.n_pixels, h * w)
             top_indices = sorted_index[start_idx:end_idx]
 
@@ -81,7 +84,7 @@ class SaliencyMetrics:
             plt.close(fig)
             '''
 
-            # Make a prediction on the masked image and store the score for the predicted class
+            # Make a prediction on the masked image
             prediction = self.model(working_image.unsqueeze(0))
             class_score = prediction[0, class_label].item()
             predictions.append(class_score)
@@ -92,12 +95,13 @@ class SaliencyMetrics:
         x = [i / (len(predictions) - 1) for i in range(len(predictions))]
         auc_score = auc(x, predictions)
 
-        # Plot AUC curve
-        plot_auc_curve(x, predictions, method_name)
+        # Save the AUC curve
+        save_auc_curve(x, predictions, method_name)
 
         return auc_score
 
     def generate_masked_image(self, *args, **kwargs):
+        """Generate the masked image based on the selected method (to be implemented in subclasses)."""
         raise NotImplementedError
 
 
@@ -106,11 +110,12 @@ class Insertion(SaliencyMetrics):
         super(Insertion, self).__init__(model, n_pixels)
 
     def generate_masked_image(self, index, image, working_image, h, w):
+        """Mask the most salient pixels by copying them from the original image to the blurred image."""
         mask = torch.zeros(h * w, device=image.device)
         mask[index] = 1
         mask = mask.view(h, w)
 
-        # Sostituisci i pixel dell'immagine sfocata con quelli dell'immagine originale
+        # Replace the pixels in the blurred image with the original image's pixels
         masked_image = torch.where(mask == 1, image, working_image)
 
         return masked_image
@@ -121,17 +126,12 @@ class Deletion(SaliencyMetrics):
         super(Deletion, self).__init__(model, n_pixels)
 
     def generate_masked_image(self, index, image, working_image, h, w):
-        # Create a mask initialized to 1
+        """Mask the most salient pixels by setting them to zero in the working image."""
         mask = torch.ones(h * w, device=image.device)
-
-        # Set the selected saliency pixels in the mask to 0
         mask[index] = 0
-
-        # Reshape the mask to the original image shape
         mask = mask.view(h, w)
 
-        # Apply the mask to the image
+        # Apply the mask to the working image
         masked_image = working_image * mask
 
-        # Optional: Return the modified image
         return masked_image

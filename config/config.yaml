@@ -5,24 +5,25 @@ defaults:
 
 currentDir: ${hydra:runtime.cwd}
 
+mainDir: C:\Users\MyPC\Desktop\Tesi\saliency-benckhmark
 
-model: VGG11_Weights.IMAGENET1K_V1
+model: ResNet18_Weights.IMAGENET1K_V1
 seed: 42
-checkpoint: checkpoints
+checkpoint: checkpoints\finetuned_ResNet18_Weights.IMAGENET1K_V1cifar10\model-epoch=28-val_loss=1.52.ckpt
 
 dataset: 
-  name: imagenet
+  name: cifar10
   path: ./data
   resize: 224
 
+visualize:
+  save_images: false
+
 saliency:
-  method: rise
+  method: gradcam
 
 metrics:
-  n_steps: 32
-  del_obscure: blur
-  ins_obscure: grey
-
+  n_pixels: 500
 
 train:
   batch_size: 1
@@ -35,7 +36,7 @@ train:
   save_path: ./models
   num_workers: 1
   patience: 4
-  finetune: False
+  finetune: True
 
 log:
   path: ./logs
@@ -43,7 +44,7 @@ log:
 
 wandb:
   project: saliency-benchmark
-  entity: marcoparola
+  entity: l-cocchella1
 
 
 
