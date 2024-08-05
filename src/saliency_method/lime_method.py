@@ -1,11 +1,12 @@
 import hydra
-import os
+import matplotlib.pyplot as plt
+import torch.utils.data as data
 
-from torchvision.models import resnet34, ResNet34_Weights
-
-from src.models.classifier import ClassifierModule
 from lime.lime_image import LimeImageExplainer
-import torch
+
+from src.datasets.dataset import SaliencyDataset
+from src.models.classifier import ClassifierModule
+from src.utils import *
 
 
 class lime_interface:
@@ -64,7 +65,6 @@ class lime_interface:
                 hide_rest=False
             )
 
-            #saliency_maps.append(mask)
             saliency_maps.append(torch.tensor(mask, dtype=torch.float32))
 
         saliency_maps = torch.stack(saliency_maps)
@@ -75,13 +75,7 @@ class lime_interface:
 # main for testing the interface of lime made for this project
 @hydra.main(config_path='../../config', config_name='config', version_base=None)
 def main(cfg):
-    import matplotlib.pyplot as plt
-    import torchvision.transforms as transforms
-    import torchvision.datasets as datasets
-    import torch.utils.data as data
-
     # Load the model and data
-    # model = resnet34(weights=ResNet34_Weights.IMAGENET1K_V1)
     model = ClassifierModule(
         weights=cfg.model,
         num_classes=cfg[cfg.dataset.name].n_classes,
@@ -93,35 +87,71 @@ def main(cfg):
     if cfg.dataset.name != 'imagenet':
         model_path = os.path.join(cfg.mainDir, cfg.checkpoint)
         model.load_state_dict(torch.load(model_path, map_location=cfg.train.device)['state_dict'])
-        # model.load_state_dict(torch.load(model_path, map_location=cfg.train.device)['state_dict'])
 
+    device = torch.device(cfg.train.device if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
     model.eval()
-    transform = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor()])
-    dataset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
+
+    # load test dataset
+    data_dir = os.path.join(cfg.mainDir, cfg.dataset.path)
+    train, val, test = load_dataset(cfg.dataset.name, data_dir, cfg.dataset.resize)
+    dataset = SaliencyDataset(test)
     dataloader = data.DataLoader(dataset, batch_size=cfg.train.batch_size, shuffle=True)
 
-    # Load the images
-    images, _ = next(iter(dataloader))
-    images = images.to('cpu')
+    # Flag to determine whether to save or show images
+    save_images = cfg.visualize.save_images
+
+    if save_images:
+        # Create directory to save saliency maps
+        finetune = "finetuned_" if cfg.train.finetune else "no_finetuned_"
+        output_dir = os.path.join(cfg.mainDir, 'LIME_saliency_maps', finetune + cfg.model + cfg.dataset.name)
+        os.makedirs(output_dir, exist_ok=True)
 
     # Initialize the Saliency method
-    method = lime_interface(model, device='cpu')
-    saliency_maps = method.generate_saliency(images)
+    method = lime_interface(model, device=device)
 
-    # Plot the saliency map and the image for each image in the batch
-    for i in range(images.size(0)):
-        image = images[i]
-        saliency = saliency_maps[i]
+    image_count = 0
 
-        plt.figure(figsize=(5, 2.5))
-        plt.subplot(1, 2, 1)
-        plt.imshow(image.squeeze().permute(1, 2, 0))
-        plt.axis('off')
-        plt.subplot(1, 2, 2)
-        plt.imshow(image.squeeze().permute(1, 2, 0))
-        plt.imshow(saliency.squeeze().detach().numpy(), cmap='jet', alpha=0.4)
-        plt.axis('off')
-        plt.show()
+    for images, labels in dataloader:
+        if image_count >= 2:
+            break
+
+        images = images.to(device)
+
+        # Get model predictions
+        outputs = model(images)
+        _, preds = torch.max(outputs, 1)
+
+        # Generate saliency maps
+        saliency_maps = method.generate_saliency(images)
+
+        for i in range(images.size(0)):
+            if image_count >= 2:
+                break
+
+            image = images[i].cpu()
+            saliency = saliency_maps[i].cpu()
+            predicted_class = preds[i]
+            true_class = labels[i]
+
+            # Create figure
+            fig, ax = plt.subplots(1, 2, figsize=(5, 2.5))
+            ax[0].imshow(image.squeeze().permute(1, 2, 0))
+            ax[0].axis('off')
+            ax[1].imshow(image.squeeze().permute(1, 2, 0))
+            ax[1].imshow(saliency.squeeze().detach().numpy(), cmap='jet', alpha=0.4)
+            ax[1].axis('off')
+            ax[1].set_title(f'Pred: {predicted_class}\nTrue: {true_class}')
+
+            if save_images:
+                output_path = os.path.join(output_dir, f'saliency_map_{image_count}.png')
+                plt.savefig(output_path)
+            else:
+                plt.show()
+
+            plt.close(fig)
+
+            image_count += 1
 
 
 if __name__ == '__main__':
