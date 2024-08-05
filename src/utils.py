@@ -4,6 +4,8 @@ import numpy as np
 import os
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks import ModelCheckpoint
+from torchvision import transforms
+
 import datasets
 
 from src.saliency_method.sidu import sidu_interface
@@ -77,8 +79,22 @@ def load_dataset(dataset, data_dir, resize=256, val_split=0.2, test_split=0.2):
         train = torch.utils.data.Subset(data, train_idx)
         val = torch.utils.data.Subset(data, val_idx)
         test = torch.utils.data.Subset(data, test_idx)
+
+
     # ImageNet
     elif dataset == 'imagenet':
+        imsize = 299
+
+        preprocess = transforms.Compose([
+            transforms.Resize((imsize, imsize)),  # 이미지의 크기를 변경
+            transforms.ToTensor(),  # torch.Tensor 형식으로 변경 [0, 255] → [0, 1]
+        ])
+
+        data_dir = '../../data/ILSVRC2012_img_val_subset'
+        val = torchvision.datasets.ImageFolder(os.path.join(data_dir), preprocess)
+        train = val
+        test = val
+        '''
         from torchvision.datasets import ImageFolder
         val = datasets.load_dataset('mrm8488/ImageNet1K-val', split='train')
         
@@ -102,7 +118,7 @@ def load_dataset(dataset, data_dir, resize=256, val_split=0.2, test_split=0.2):
         val = ImageNetDataset(val, transform)
         train = val
         test = val
-        
+    '''
 
     # Oxford-IIIT Pet
     elif dataset == 'oxford-iiit-pet':
@@ -157,7 +173,7 @@ def load_saliecy_method(method, model, device='cpu', **kwargs):
         return lime_interface(model, device=device, **kwargs)
     else:
         raise ValueError(f'Unknown saliency method: {method}')
-        
+
 
 if __name__ == "__main__":
 
