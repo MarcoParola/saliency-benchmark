@@ -5,6 +5,7 @@ from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_sc
 from pytorch_lightning import LightningModule
 import os
 
+
 class ClassifierModule(LightningModule):
 
     def __init__(self, weights, num_classes, finetune=False, lr=10e-6, max_epochs=100):
@@ -22,7 +23,7 @@ class ClassifierModule(LightningModule):
         if not finetune:
             for param in self.model.parameters():
                 param.requires_grad = False
-            
+
         # method to set the classifier head independently of the model (as head names are different for each model)
         self._set_model_classifier(weights_cls, num_classes)
 
@@ -31,8 +32,6 @@ class ClassifierModule(LightningModule):
 
         self.preprocess = weights.transforms()
         self.loss = torch.nn.CrossEntropyLoss()
-
-        
 
     def forward(self, x):
         return self.model(x)
@@ -62,7 +61,6 @@ class ClassifierModule(LightningModule):
         self.log('test_precision', precision, on_step=False, on_epoch=True)
         self.log('test_f1', f1, on_step=False, on_epoch=True)
         return accuracy
-
 
     def predict_step(self, batch, batch_idx, dataloader_idx=None):
         self.eval()
@@ -97,7 +95,6 @@ class ClassifierModule(LightningModule):
         loss = self.loss(y_hat, labels)
         self.log(f"{stage}_loss", loss, on_step=False, on_epoch=True)
         return loss
-
 
     def _set_model_classifier(self, weights_cls, num_classes):
         weights_cls = str(weights_cls)
@@ -177,13 +174,12 @@ class ClassifierModule(LightningModule):
             )
 
 
-    
 if __name__ == '__main__':
-    
+
     model_list = [
         'ResNet50_Weights.IMAGENET1K_V1',
         'EfficientNet_B1_Weights.IMAGENET1K_V1',
-        'VGG16_Weights.IMAGENET1K_V1',    
+        'VGG16_Weights.IMAGENET1K_V1',
     ]
 
     img = torch.randn(2, 3, 256, 256)
@@ -192,4 +188,3 @@ if __name__ == '__main__':
         print(model_name)
         model = ClassifierModule(model_name, 10)
         print(model(img).shape)
-
