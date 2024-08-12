@@ -8,7 +8,7 @@ from src.saliency_metrics import Insertion, Deletion
 from src.utils import load_dataset, load_saliecy_method
 
 
-@hydra.main(config_path='config', config_name='config')
+@hydra.main(config_path='config', config_name='config', version_base=None)
 def main(cfg):
     loggers = None
 
@@ -83,7 +83,7 @@ def main(cfg):
                 # Update progress bar
                 pbar.update(1)
             '''
-            if j == 500:
+            if j == 2:
                 break
             '''
 
@@ -91,8 +91,14 @@ def main(cfg):
     avg_auc_ins_score = sum(insertion_scores) / len(insertion_scores) if insertion_scores else 0
     avg_auc_del_score = sum(deletion_scores) / len(deletion_scores) if deletion_scores else 0
 
-    print(f'AUC Insertion Score: {avg_auc_ins_score}')
-    print(f'AUC Deletion Score: {avg_auc_del_score}')
+    # print(f'AUC Insertion Score: {avg_auc_ins_score}')
+    # print(f'AUC Deletion Score: {avg_auc_del_score}')
+
+    # Save results to file
+    output_file = os.path.join(cfg.currentDir, cfg.metrics.output_file)
+    with open(output_file, 'w') as f:
+        f.write(f'AUC Insertion Score: {avg_auc_ins_score}\n')
+        f.write(f'AUC Deletion Score: {avg_auc_del_score}\n')
 
 
 if __name__ == "__main__":
