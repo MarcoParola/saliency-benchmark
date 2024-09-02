@@ -24,17 +24,9 @@ To install the project, follow these steps:
 
 4. **Activate the virtual environment:**
 
-   - On Windows:
-
-       ```bash
-       env\Scripts\activate
-       ```
-
-   - On Unix or MacOS:
-
-       ```bash
-       source env/bin/activate
-       ```
+    ```bash
+    . env/bin/activate
+    ```
 
 5. **Install the dependencies:**
 
@@ -42,11 +34,5 @@ To install the project, follow these steps:
     python -m pip install -r requirements.txt
     ```
 
-6. **Create a data directory:**
-
-    ```bash
-    mkdir data
-    ```
-
-Follow these steps to set up your environment for running the project. This includes cloning the repository, setting up a virtual environment, installing necessary dependencies, and creating a directory for your data. Remember to replace `https://github.com/yourusername/saliency-benchmark.git` with the actual URL of your repository.
+These steps will set up your working environment, install necessary dependencies, and prepare you to run the project.
 
