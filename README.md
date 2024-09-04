@@ -66,7 +66,20 @@ To evaluate the trained model, use the following command:
 ```bash
 python3 test.py
 ```
-You need to specify the following parameters in the config.yaml file:
+You need to specify the following parameters in the [config.yaml](config/config.yaml) file:
 - `model`: The pre-trained model to use.
 - `dataset.name`: The dataset used for testing.
 - `checkpoint`: Path to the model checkpoint. Choose from the model checkpoints available in the **checkpoints** folder.
+
+## Evaluate Explainability 
+
+After training and testing the model you can evaluate the explainability of the model by using the following command: 
+```bash
+python3 evaluate_saliency.py
+```
+You need to specify the following parameters in the [config.yaml](config/config.yaml) file:
+- `model`: The pre-trained model to use.
+- `dataset.name`: The dataset used for testing.
+- `checkpoint`: Path to the model checkpoint. Choose from the model checkpoints available in the **checkpoints** folder.
+- `saliency.method`: Saliency method used for evaluating the model's explanations. The supported methods are: `gradcam`, `rise`, `sidu`, `lime`.
+- `metrics.output_file`: Specifies the file name for saving the evaluation metrics.
