@@ -43,7 +43,7 @@ To train the networks using this repository, use the following command:
 ```bash
 python3 train.py model=VGG11_Weights.IMAGENET1K_V1 dataset.name=cifar10 train.finetune=True
 ```
-- `model`: Specifies the pre-trained model to use. The full list of available models can be found [here](https://pytorch.org/vision/stable/models.html#table-of-all-available-classification
+- `model`: Specifies the pre-trained model to use. The full list of available models can be found [here](https://pytorch.org/vision/stable/models.html#table-of-all-available-classification)
 
 - `dataset.name`: Specifies the dataset to use. The supported datasets are:
     - `cifar10`
