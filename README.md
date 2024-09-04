@@ -35,3 +35,13 @@ To install the project, follow these steps:
     ```
 
 These steps will set up your working environment, install necessary dependencies, and prepare you to run the project.
+
+## Training
+
+To train the networks using this repository, use the following command:
+
+```bash
+python3 train.py model=VGG11_Weights.IMAGENET1K_V1 dataset.name=cifar10 train.finetune=True
+```
+### configuration options 
+
