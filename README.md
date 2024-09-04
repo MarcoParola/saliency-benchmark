@@ -59,7 +59,8 @@ python3 train.py model=VGG11_Weights.IMAGENET1K_V1 dataset.name=cifar10 train.fi
 
 These parameters allow you to customize the training process according to your specific requirements. For a detailed configuration, you may refer to or modify the train section of the [config.yaml](config/config.yaml) file according to your specific requirements.
 
-##Testing 
+## Testing 
+
 To evaluate the trained model, use the following command:
 
 ```bash
