@@ -43,17 +43,19 @@ To train the networks using this repository, use the following command:
 ```bash
 python3 train.py model=VGG11_Weights.IMAGENET1K_V1 dataset.name=cifar10 train.finetune=True
 ```
-- model: Specifies the pre-trained model to use. The full list of available models can be found here.
+- `model`: Specifies the pre-trained model to use. The full list of available models can be found [here](https://pytorch.org/vision/stable/models.html#table-of-all-available-classification
 
-- dataset.name: Specifies the dataset to use. The supported datasets are:
-    - cifar10
-    - cifar100
-    - caltech101
-    - mnist
-    - svhn
-    - oxford-iiit-pet
+- `dataset.name`: Specifies the dataset to use. The supported datasets are:
+    - `cifar10`
+    - `cifar100`
+    - `caltech101`
+    - `mnist`
+    - `svhn`
+    - `oxford-iiit-pet`
   
-- train.finetune: Determines whether to fine-tune the model (True) or use it as a feature extractor (False).
+- `train.finetune`: Determines the training mode.
+    - `True`: Fine-tunes the entire model.
+    - `False`: Uses the model as a feature extractor.
 
-These parameters allow you to customize the training process according to your specific requirements, leveraging pre-trained models for different datasets and training modes.
+These parameters allow you to customize the training process according to your specific requirements. For a detailed configuration, you may refer to or modify the train section of the [config.yaml](config/config.yaml) file according to your specific requirements.
 
