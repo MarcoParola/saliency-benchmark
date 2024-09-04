@@ -43,5 +43,17 @@ To train the networks using this repository, use the following command:
 ```bash
 python3 train.py model=VGG11_Weights.IMAGENET1K_V1 dataset.name=cifar10 train.finetune=True
 ```
-### configuration options 
+- model: Specifies the pre-trained model to use. The full list of available models can be found here.
+
+- dataset.name: Specifies the dataset to use. The supported datasets are:
+    - cifar10
+    - cifar100
+    - caltech101
+    - mnist
+    - svhn
+    - oxford-iiit-pet
+  
+- train.finetune: Determines whether to fine-tune the model (True) or use it as a feature extractor (False).
+
+These parameters allow you to customize the training process according to your specific requirements, leveraging pre-trained models for different datasets and training modes.
 
