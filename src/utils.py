@@ -133,7 +133,7 @@ def load_dataset(dataset, data_dir, resize=256, val_split=0.2, test_split=0.2):
         val = torch.utils.data.Subset(data, val_idx)
         test = torch.utils.data.Subset(data, test_idx)
 
-        # Oxford Flowers
+    # Oxford Flowers
     elif dataset == 'oxford-flowers':
         data = torchvision.datasets.Flowers102(data_dir, split='train', download=True, transform=transform)
         val_data = torchvision.datasets.Flowers102(data_dir, split='val', download=True, transform=transform)
