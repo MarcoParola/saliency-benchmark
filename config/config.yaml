@@ -7,12 +7,12 @@ currentDir: ${hydra:runtime.cwd}
 
 mainDir: C:\Users\MyPC\Desktop\Tesi\saliency-benckhmark
 
-model: ResNet18_Weights.IMAGENET1K_V1
+model: VGG11_Weights.IMAGENET1K_V1
 seed: 42
-checkpoint: checkpoints\finetuned_ResNet18_Weights.IMAGENET1K_V1cifar10\model-epoch=28-val_loss=1.52.ckpt
+checkpoint: checkpoints\finetuned_VGG11_Weights.IMAGENET1K_V1oxford-iiit-pet\model-epoch=69-val_loss=3.09.ckpt
 
 dataset: 
-  name: cifar10
+  name: oxford-iiit-pet
   path: ./data
   resize: 224
 
@@ -24,6 +24,7 @@ saliency:
 
 metrics:
   n_pixels: 500
+  output_file: "finetuned_ResNet18_cifar10_gradcam.txt"
 
 train:
   batch_size: 1
