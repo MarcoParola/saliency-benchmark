@@ -133,6 +133,20 @@ def load_dataset(dataset, data_dir, resize=256, val_split=0.2, test_split=0.2):
         val = torch.utils.data.Subset(data, val_idx)
         test = torch.utils.data.Subset(data, test_idx)
 
+    # Oxford Flowers
+    elif dataset == 'oxford-flowers':
+        data = torchvision.datasets.Flowers102(data_dir, split='train', download=True, transform=transform)
+        val_data = torchvision.datasets.Flowers102(data_dir, split='val', download=True, transform=transform)
+        test_data = torchvision.datasets.Flowers102(data_dir, split='test', download=True, transform=transform)
+
+        num_train = len(data)
+        indices = list(range(num_train))
+        np.random.shuffle(indices)
+
+        train = data
+        val = val_data
+        test = test_data
+
     # SVHN
     elif dataset == 'svhn':
         #data = torchvision.datasets.SVHN(data_dir, split='test', download=True, transform=transform)
@@ -181,7 +195,8 @@ if __name__ == "__main__":
         # 'cifar10',
         # 'cifar100',
         # 'caltech101',
-        'imagenet',
+        'oxford-flowers',
+        # 'imagenet',
         # 'oxford-iiit-pet',
         # 'svhn',
         # 'mnist',

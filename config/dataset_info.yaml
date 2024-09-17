@@ -16,6 +16,9 @@ svhn:
 oxford-iiit-pet:
   n_classes: 37
 
+oxford-flowers:
+  n_classes: 102
+
 mnist:
   n_classes: 10
 
