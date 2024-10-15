@@ -8,7 +8,7 @@ from src.saliency_metrics import Insertion, Deletion
 from src.utils import load_dataset, load_saliecy_method
 
 
-@hydra.main(config_path='config', config_name='config', version_base=None)
+@hydra.main(config_path='../config', config_name='config')
 def main(cfg):
     loggers = None
 
