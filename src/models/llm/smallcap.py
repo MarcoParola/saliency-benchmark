@@ -3,6 +3,16 @@ from PIL import Image
 from gradio_client import Client
 
 
+def handle_smallcap_result(output_smallcaps):
+    prompt = output_smallcaps.split("Retrieved captions:")
+
+    prompt = [caption.replace('\n', ' ') for caption in prompt]
+    #print(prompt)
+
+    caption = ', '.join(prompt)
+    return caption
+
+
 class SmallCapModule(nn.Module):
     def __init__(self):
         super(SmallCapModule, self).__init__()
