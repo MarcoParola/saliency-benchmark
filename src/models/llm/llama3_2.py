@@ -8,9 +8,13 @@ from io import BytesIO
 import base64
 
 from src.models.llm.llm_metrics import vqa_score, clip_score
-from src.models.llm.smallcap_module import SmallCapModule
-from src.models.llm.utils_llm import handle_llama_result, handle_smallcap_result
+from src.models.llm.smallcap import SmallCapModule, handle_smallcap_result
 
+
+def handle_llama_result(output_llama):
+    start_index = output_llama.rfind("<|end_header_id|>") + len("<|end_header_id|>")
+    caption = output_llama[start_index:].split("<|eot_id|>")[0].strip()
+    return caption
 
 class Llama32Module(nn.Module):
     def __init__(self, text):
