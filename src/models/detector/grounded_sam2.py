@@ -1,3 +1,6 @@
+import json
+import os
+
 import torch.nn as nn
 import torch
 from autodistill_grounded_sam_2 import GroundedSAM2
@@ -5,9 +8,14 @@ from autodistill.utils import plot
 import cv2
 import spacy
 from autodistill.detection import CaptionOntology
+import supervision as sv
+from supervision.draw.color import ColorPalette
+
+OUTPUT_DIR = "../../../output"
 
 
 def create_ontology_from_string(caption):
+    print("caption:" + str(caption))
     nlp = spacy.load("en_core_web_sm")
     doc = nlp(caption)  #process the caption
 
@@ -15,9 +23,35 @@ def create_ontology_from_string(caption):
     nouns = list(set([token.lemma_ for token in doc if
                       token.pos_ in ["NOUN", "PROPN"]]))  # lemma_ is used to convert plurals in singular
 
+    print("Nouns:")
+    print('. '.join(nouns))
+
     #Create dictionary for ontology mapping each nouns in itself
     ontology_dict = {word: word for word in nouns}
     return CaptionOntology(ontology_dict)
+
+
+def retrieve_labels(param, class_id):
+    labels = []
+    for cl in class_id:
+        labels.append(param[cl])
+    return labels
+
+
+def save_annotated_images(model, image, results):
+    box_annotator = sv.BoxAnnotator()
+    annotated_frame = box_annotator.annotate(scene=image.copy(), detections=results)
+
+    label_annotator = sv.LabelAnnotator()
+    annotated_frame = label_annotator.annotate(scene=annotated_frame, detections=results,
+                                               labels=retrieve_labels(model.ontology.classes(), results.class_id))
+    cv2.imwrite(os.path.join(OUTPUT_DIR, "groundingdino_annotated_image.jpg"), annotated_frame)
+
+    mask_annotator = sv.MaskAnnotator()
+    annotated_frame = mask_annotator.annotate(scene=annotated_frame, detections=results)
+    cv2.imwrite(os.path.join(OUTPUT_DIR, "grounded_sam2_annotated_image_with_mask.jpg"), annotated_frame)
+    # label all images in a folder called `context_images`
+    model.label("../../../images", extension=".jpeg")
 
 
 class GroundedSam2(nn.Module):
@@ -25,7 +59,10 @@ class GroundedSam2(nn.Module):
         super(GroundedSam2, self).__init__()
 
         self.model = GroundedSAM2(
-            ontology=create_ontology_from_string(prompt)
+            ontology=create_ontology_from_string(prompt),
+            model="Grounding DINO",  # Choose "Florence 2" or "Grounding DINO"
+            grounding_dino_box_threshold=0.4,
+            grounding_dino_text_threshold=0.3
         )
 
     def forward(self, image):
@@ -34,13 +71,20 @@ class GroundedSam2(nn.Module):
             with torch.cuda.amp.autocast():
                 results = self.model.predict(image)
 
-        plot(
-            image=image,
-            classes=self.model.ontology.classes(),
-            detections=results
-        )
-        # label all images in a folder called `context_images`
-        #self.model.label("../../../images", extension=".jpeg")
+        #print(results)
+        # with open("../../../output/output.txt", "w") as file:
+        #     file.write(str(results))
+        #
+        # plot(
+        #     image=image,
+        #     classes=self.model.ontology.classes(),
+        #     detections=results
+        # )
+
+        #save_annotated_images(self.model, image, results)
+        bbox=results.xyxy
+        categories=results.class_id
+        return bbox,categories
 
 
 if __name__ == '__main__':
@@ -63,4 +107,6 @@ if __name__ == '__main__':
 
     torch.cuda.empty_cache()
 
-    model(cv2.imread(IMAGE_PATH))
+    bbox,categories = model(cv2.imread(IMAGE_PATH))
+    print(bbox)
+    print(categories)

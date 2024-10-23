@@ -5,7 +5,7 @@ import os
 
 from src.utils import load_dataset, get_early_stopping, get_save_model_callback
 from src.models.classifier import ClassifierModule
-from src.datasets.dataset import SaliencyDataset
+from src.datasets.classification import ClassificationDataset
 from src.log import get_loggers
 
 
@@ -34,9 +34,9 @@ def main(cfg):
     # Load dataset
     data_dir = os.path.join(cfg.currentDir, cfg.dataset.path)
     train, val, test = load_dataset(cfg.dataset.name, data_dir, cfg.dataset.resize)
-    train = SaliencyDataset(train)
-    val = SaliencyDataset(val)
-    test = SaliencyDataset(test)
+    train = ClassificationDataset(train)
+    val = ClassificationDataset(val)
+    test = ClassificationDataset(test)
     train_loader = torch.utils.data.DataLoader(train, 
         batch_size=cfg.train.batch_size, 
         shuffle=True, 
