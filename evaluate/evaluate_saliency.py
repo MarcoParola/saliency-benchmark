@@ -2,9 +2,9 @@ import os
 import hydra
 import torch
 from tqdm import tqdm
-from src.datasets.dataset import SaliencyDataset
+from src.datasets.classification import ClassificationDataset
 from src.models.classifier import ClassifierModule
-from src.saliency_metrics import Insertion, Deletion
+from src.metrics.saliency_metrics import Insertion, Deletion
 from src.utils import load_dataset, load_saliecy_method
 
 
@@ -25,6 +25,7 @@ def main(cfg):
         model_path = os.path.join(cfg.currentDir, cfg.checkpoint)
         model.load_state_dict(torch.load(model_path, map_location=cfg.train.device)['state_dict'])
 
+    #qui sotto non è uguale a sopra?
     if cfg.dataset.name != 'imagenet':
         model_path = os.path.join(cfg.currentDir, cfg.checkpoint)
         # model.load_state_dict(torch.load(model_path)['state_dict'])
@@ -37,9 +38,10 @@ def main(cfg):
     # load test dataset
     data_dir = os.path.join(cfg.currentDir, cfg.dataset.path)
     train, val, test = load_dataset(cfg.dataset.name, data_dir, cfg.dataset.resize)
-    test = SaliencyDataset(test)
+    test = ClassificationDataset(test)
     dataloader = torch.utils.data.DataLoader(test, batch_size=cfg.train.batch_size, shuffle=True)
 
+    #qui dovremmo inserire la localization?
     insertion_metric = Insertion(model, n_pixels=cfg.metrics.n_pixels)
     deletion_metric = Deletion(model, n_pixels=cfg.metrics.n_pixels)
 

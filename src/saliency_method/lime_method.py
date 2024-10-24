@@ -4,7 +4,7 @@ import torch.utils.data as data
 
 from lime.lime_image import LimeImageExplainer
 
-from src.datasets.dataset import SaliencyDataset
+from src.datasets.classification import ClassificationDataset
 from src.models.classifier import ClassifierModule
 from src.utils import *
 
@@ -95,7 +95,7 @@ def main(cfg):
     # load test dataset
     data_dir = os.path.join(cfg.mainDir, cfg.dataset.path)
     train, val, test = load_dataset(cfg.dataset.name, data_dir, cfg.dataset.resize)
-    dataset = SaliencyDataset(test)
+    dataset = ClassificationDataset(test)
     dataloader = data.DataLoader(dataset, batch_size=cfg.train.batch_size, shuffle=True)
 
     # Flag to determine whether to save or show images

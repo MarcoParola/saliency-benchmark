@@ -1,13 +1,8 @@
-import numpy as np
-import torch
 import torch.nn as nn
 from PIL import Image
-from transformers import AutoProcessor, BitsAndBytesConfig, AutoModelForPreTraining, CLIPProcessor, CLIPModel
-from gradio_client import Client, file
-from io import BytesIO
-import base64
+from transformers import AutoProcessor, BitsAndBytesConfig, AutoModelForPreTraining
 
-from src.models.llm.llm_metrics import vqa_score, clip_score
+from src.metrics.llm_metrics import clip_score
 from src.models.llm.smallcap import SmallCapModule, handle_smallcap_result
 
 
