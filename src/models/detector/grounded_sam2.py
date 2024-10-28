@@ -84,7 +84,9 @@ class GroundedSam2(nn.Module):
         #save_annotated_images(self.model, image, results)
         bbox=results.xyxy
         categories=results.class_id
-        return bbox,categories
+        confidence_score=results.confidence
+        #categories = [list(self.model.ontology.classes())[cat] for cat in categories]  # in this way I have the text of the label and not the number, which represents the position of that label in the ontology
+        return bbox,categories,confidence_score
 
 
 if __name__ == '__main__':
@@ -107,6 +109,7 @@ if __name__ == '__main__':
 
     torch.cuda.empty_cache()
 
-    bbox,categories = model(cv2.imread(IMAGE_PATH))
+    bbox,categories,confidence = model(cv2.imread(IMAGE_PATH))
     print(bbox)
     print(categories)
+    print(confidence)
