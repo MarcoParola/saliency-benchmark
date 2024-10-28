@@ -2,10 +2,10 @@ import os
 import hydra
 import torch
 from tqdm import tqdm
-from src.datasets.classification import ClassificationDataset
+from src.datasets.classification import ClassificationDataset, load_classification_dataset
 from src.models.classifier import ClassifierModule
 from src.metrics.saliency_metrics import Insertion, Deletion
-from src.utils import load_dataset, load_saliecy_method
+from src.utils import load_saliecy_method
 
 
 @hydra.main(config_path='../config', config_name='config')
@@ -37,7 +37,7 @@ def main(cfg):
 
     # load test dataset
     data_dir = os.path.join(cfg.currentDir, cfg.dataset.path)
-    train, val, test = load_dataset(cfg.dataset.name, data_dir, cfg.dataset.resize)
+    train, val, test = load_classification_dataset(cfg.dataset.name, data_dir, cfg.dataset.resize)
     test = ClassificationDataset(test)
     dataloader = torch.utils.data.DataLoader(test, batch_size=cfg.train.batch_size, shuffle=True)
 

@@ -12,7 +12,7 @@ seed: 42
 checkpoint: checkpoints\finetuned_VGG11_Weights.IMAGENET1K_V1oxford-iiit-pet\model-epoch=69-val_loss=3.09.ckpt
 
 dataset: 
-  name: oxford-iiit-pet
+  name: francesco_animals
   path: ./data
   resize: 224
 

@@ -4,14 +4,57 @@ import numpy as np
 import os
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks import ModelCheckpoint
+from torch import tensor
 from torchvision import transforms
 
 import datasets
+from src.datasets.classification import load_classification_dataset
 
 from src.saliency_method.sidu import sidu_interface
 from src.saliency_method.gradcam import gradcam_interface
 from src.saliency_method.rise import rise_interface
 from src.saliency_method.lime_method import lime_interface
+
+
+def from_xywh_to_xyxy(bbox):
+    # the input is in format x,y,w,h and I want it in format x_top_left,y_top_left,x_bottom_right,y_bottom_right
+    new_box = bbox.copy()
+    new_box[2] = abs(bbox[0] + bbox[2])
+    new_box[3] = abs(bbox[1] + bbox[3])
+    return new_box
+
+
+def from_array_to_tensor(boxes_vector, labels_vector):
+    # print(boxes_vector)
+    # print(labels_vector)
+    # Convert lists to tensors
+    boxes_tensor = torch.tensor(boxes_vector)
+    labels_tensor = torch.tensor(labels_vector)
+
+    # Create the structure
+    structure = [
+        {
+            "boxes": boxes_tensor,
+            "labels": labels_tensor,
+        }
+    ]
+
+    #print(structure)
+
+    return structure
+
+
+def from_array_to_dict(boxes_vector, confidence_scores, labels_vector):
+    boxes_vector = tensor(boxes_vector)
+    confidence_scores = tensor(confidence_scores)
+    labels_vector = tensor(labels_vector)
+
+    structure = [dict(
+            boxes = boxes_vector,
+            scores = confidence_scores,
+            labels = labels_vector
+    )]
+    return structure
 
 
 def get_save_model_callback(save_path):
@@ -28,6 +71,7 @@ def get_save_model_callback(save_path):
     )
     return save_model_callback
 
+
 def get_early_stopping(patience=10):
     """Returns an EarlyStopping callback
     cfg: hydra config
@@ -38,142 +82,6 @@ def get_early_stopping(patience=10):
         patience=patience,
     )
     return early_stopping_callback
-
-def load_dataset(dataset, data_dir, resize=256, val_split=0.2, test_split=0.2):
-
-    train, val, test = None, None, None
-
-    torch.manual_seed(42)
-    np.random.seed(42)
-
-    transform = torchvision.transforms.Compose([
-        torchvision.transforms.ToTensor(),
-        torchvision.transforms.Resize((resize, resize)),
-    ])
-
-    # CIFAR-10
-    if dataset == 'cifar10':
-        train = torchvision.datasets.CIFAR10(data_dir, train=True, download=True, transform=transform)
-        test = torchvision.datasets.CIFAR10(data_dir, train=False, download=True, transform=transform)
-
-        split = int(len(train) * val_split)
-        train, val = torch.utils.data.random_split(train, [len(train) - split, split])
-
-    # CIFAR-100
-    elif dataset == 'cifar100':
-        train = torchvision.datasets.CIFAR100(data_dir, train=True, download=True, transform=transform)
-        test = torchvision.datasets.CIFAR100(data_dir, train=False, download=True, transform=transform)
-
-        split = int(len(train) * val_split)
-        train, val = torch.utils.data.random_split(train, [len(train) - split, split])
-
-    # Caltech101
-    elif dataset == 'caltech101':
-        data = torchvision.datasets.Caltech101(data_dir, download=True, transform=transform)
-        num_train = len(data)
-        indices = list(range(num_train))
-        np.random.shuffle(indices)
-        val_split = int(val_split * num_train)
-        test_split = int(test_split * num_train)
-        train_idx, val_idx, test_idx = indices[val_split+test_split:], indices[:val_split], indices[val_split:val_split+test_split]
-        train = torch.utils.data.Subset(data, train_idx)
-        val = torch.utils.data.Subset(data, val_idx)
-        test = torch.utils.data.Subset(data, test_idx)
-
-
-    # ImageNet
-    elif dataset == 'imagenet':
-        imsize = 299
-
-        preprocess = transforms.Compose([
-            transforms.Resize((imsize, imsize)),  # 이미지의 크기를 변경
-            transforms.ToTensor(),  # torch.Tensor 형식으로 변경 [0, 255] → [0, 1]
-        ])
-
-        data_dir = '../../data/ILSVRC2012_img_val_subset'
-        val = torchvision.datasets.ImageFolder(os.path.join(data_dir), preprocess)
-        train = val
-        test = val
-        '''
-        from torchvision.datasets import ImageFolder
-        val = datasets.load_dataset('mrm8488/ImageNet1K-val', split='train')
-        
-        class ImageNetDataset(torch.utils.data.Dataset):
-            def __init__(self, dataset, transform=None):
-                self.dataset = dataset
-                self.transform = transform
-
-            def __len__(self):
-                return len(self.dataset)
-
-            def __getitem__(self, idx):
-                img, lbl = self.dataset[idx]['image'], self.dataset[idx]['label']
-                if self.transform:
-                    img = self.transform(img)
-                # check if the image contains 1 channels
-                if img.shape[0] == 1:
-                    img = img.repeat(3, 1, 1)
-                return img, lbl
-
-        val = ImageNetDataset(val, transform)
-        train = val
-        test = val
-    '''
-
-    # Oxford-IIIT Pet
-    elif dataset == 'oxford-iiit-pet':
-        data = torchvision.datasets.OxfordIIITPet(data_dir, download=True, transform=transform)
-        num_train = len(data)
-        indices = list(range(num_train))
-        np.random.shuffle(indices)
-        val_split = int(val_split * num_train)
-        test_split = int(test_split * num_train)
-        train_idx, val_idx, test_idx = indices[val_split+test_split:], indices[:val_split], indices[val_split:val_split+test_split]
-        train = torch.utils.data.Subset(data, train_idx)
-        val = torch.utils.data.Subset(data, val_idx)
-        test = torch.utils.data.Subset(data, test_idx)
-
-    # Oxford Flowers
-    elif dataset == 'oxford-flowers':
-        data = torchvision.datasets.Flowers102(data_dir, split='train', download=True, transform=transform)
-        val_data = torchvision.datasets.Flowers102(data_dir, split='val', download=True, transform=transform)
-        test_data = torchvision.datasets.Flowers102(data_dir, split='test', download=True, transform=transform)
-
-        num_train = len(data)
-        indices = list(range(num_train))
-        np.random.shuffle(indices)
-
-        train = data
-        val = val_data
-        test = test_data
-
-    # SVHN
-    elif dataset == 'svhn':
-        #data = torchvision.datasets.SVHN(data_dir, split='test', download=True, transform=transform)
-        train = torchvision.datasets.SVHN(data_dir, split='train', download=True, transform=transform)
-        test = torchvision.datasets.SVHN(data_dir, split='test', download=True, transform=transform)
-
-        split = int(len(train) * val_split)
-        train, val = torch.utils.data.random_split(train, [len(train) - split, split])
-
-    # MNIST
-    elif dataset == 'mnist':
-        train = torchvision.datasets.MNIST(data_dir, train=True, download=True, transform=transform)
-        test = torchvision.datasets.MNIST(data_dir, train=False, download=True, transform=transform)
-        split = int(len(train) * val_split)
-        train, val = torch.utils.data.random_split(train, [len(train) - split, split])
-
-    # FashionMNIST
-    elif dataset == 'fashionmnist':
-        train = torchvision.datasets.FashionMNIST(data_dir, train=True, download=True, transform=transform)
-        test = torchvision.datasets.FashionMNIST(data_dir, train=False, download=True, transform=transform)
-        split = int(len(train) * val_split)
-        train, val = torch.utils.data.random_split(train, [len(train) - split, split])
-
-    else:
-        raise ValueError(f'Unknown dataset: {dataset}')
-
-    return train, val, test
 
 
 def load_saliecy_method(method, model, device='cpu', **kwargs):
@@ -204,12 +112,13 @@ if __name__ == "__main__":
     ]
     for dataset in data:
         print(f'\n\nDataset: {dataset}')
-        data = load_dataset(dataset, './data')
+        data = load_classification_dataset(dataset, './data')
         print(data[0].__len__(), data[1].__len__(), data[2].__len__())
 
         test = data[2]
         print(test)
         import matplotlib.pyplot as plt
+
         for i in range(10):
             img, lbl = test.__getitem__(i)
             print(img.shape, lbl)
