@@ -1,8 +1,10 @@
 import json
 import os
 
+import numpy as np
 import torch.nn as nn
 import torch
+from PIL import Image
 from autodistill_grounded_sam_2 import GroundedSAM2
 from autodistill.utils import plot
 import cv2
@@ -10,6 +12,8 @@ import spacy
 from autodistill.detection import CaptionOntology
 import supervision as sv
 from supervision.draw.color import ColorPalette
+
+from src.utils import save_annotated_images
 
 OUTPUT_DIR = "../../../output"
 
@@ -38,20 +42,25 @@ def retrieve_labels(param, class_id):
     return labels
 
 
-def save_annotated_images(model, image, results):
+def save_annotated_images_grounded(model, image, results):
     box_annotator = sv.BoxAnnotator()
     annotated_frame = box_annotator.annotate(scene=image.copy(), detections=results)
 
     label_annotator = sv.LabelAnnotator()
     annotated_frame = label_annotator.annotate(scene=annotated_frame, detections=results,
                                                labels=retrieve_labels(model.ontology.classes(), results.class_id))
+
+    # Assuming 'annotated_frame' is a PIL Image object
+    if isinstance(annotated_frame, Image.Image):
+        annotated_frame = np.array(annotated_frame)
+
     cv2.imwrite(os.path.join(OUTPUT_DIR, "groundingdino_annotated_image.jpg"), annotated_frame)
 
     mask_annotator = sv.MaskAnnotator()
     annotated_frame = mask_annotator.annotate(scene=annotated_frame, detections=results)
     cv2.imwrite(os.path.join(OUTPUT_DIR, "grounded_sam2_annotated_image_with_mask.jpg"), annotated_frame)
     # label all images in a folder called `context_images`
-    model.label("../../../images", extension=".jpeg")
+    #model.label("../../../images", extension=".jpeg")
 
 
 class GroundedSam2(nn.Module):
@@ -65,6 +74,8 @@ class GroundedSam2(nn.Module):
             grounding_dino_text_threshold=0.3
         )
 
+        self.ontology = self.model.ontology
+
     def forward(self, image):
         # run inference on a single image
         with torch.no_grad():
@@ -72,36 +83,51 @@ class GroundedSam2(nn.Module):
                 results = self.model.predict(image)
 
         #print(results)
-        # with open("../../../output/output.txt", "w") as file:
-        #     file.write(str(results))
-        #
-        # plot(
-        #     image=image,
-        #     classes=self.model.ontology.classes(),
-        #     detections=results
-        # )
+        print(self.model.ontology.classes())
 
-        #save_annotated_images(self.model, image, results)
-        bbox=results.xyxy
-        categories=results.class_id
-        confidence_score=results.confidence
-        #categories = [list(self.model.ontology.classes())[cat] for cat in categories]  # in this way I have the text of the label and not the number, which represents the position of that label in the ontology
-        return bbox,categories,confidence_score
+        # if debug is True:
+        #save_annotated_images_grounded(self.model, image, results)
+
+        bbox = results.xyxy
+        categories = results.class_id
+        confidence_score = results.confidence
+        print(bbox)
+        print(categories)
+        print(confidence_score)
+
+        keep_indices = torch.ops.torchvision.nms(torch.tensor(bbox), torch.tensor(confidence_score), iou_threshold=0.5)
+        print(keep_indices)
+
+        bbox = bbox[keep_indices]
+        categories = categories[keep_indices]
+        confidence_score = confidence_score[keep_indices]
+        # print(bbox)
+        # print(categories)
+        # print(confidence_score)
+
+        if bbox.ndim == 1:  #se dopo NMS resta una sola box
+            bbox = np.expand_dims(bbox, axis=0)
+            categories = np.array([categories])
+            confidence_score = np.array([confidence_score])
+
+        # results = sv.Detections(
+        #     xyxy=bbox,
+        #     confidence=confidence_score,
+        #     class_id=categories
+        # )
+        #
+        # labels = [self.model.ontology.classes()[cat] for cat in categories]
+
+        # annotated_frame=save_annotated_images(labels, image, results)
+        # cv2.imwrite(os.path.join(OUTPUT_DIR, "groundingdino_annotated_image.jpg"), annotated_frame)
+
+        return bbox, categories, confidence_score
 
 
 if __name__ == '__main__':
-    caption = ("The image depicts a group of people gathered around a pool, with a green wall and a few fish swimming "
-               "in the water")
-    caption = ("The image depicts a woman walking along the edge of a large body of water, with a cityscape in the "
-               "background. In the foreground, the woman is dressed in a brown jacket, blue jeans, and a black purse "
-               "slung over her shoulder. She has her dark hair pulled back into a bun and is carrying a blue plastic "
-               "bag in her right hand. A concrete barrier separates her from the water, which appears to be a lake or "
-               "river, with a fountain spraying water into the air at its center. In the background, a grassy area is "
-               "visible, with a row of trees lining the edge of the water. Beyond the trees, several tall buildings "
-               "rise into the sky, including one with a crane on its roof. The sky above is overcast, with a few "
-               "clouds visible. The overall atmosphere of the image suggests a peaceful and serene setting, "
-               "with the woman enjoying a leisurely walk along the water's edge.")
-    IMAGE_PATH = "../../../images/buildings.jpg"
+    caption = "cat chicken cow dog fox goat horse person racoon skunk"
+
+    IMAGE_PATH = "../../../images/horse.jpg"
 
     torch.cuda.empty_cache()
 
@@ -109,7 +135,7 @@ if __name__ == '__main__':
 
     torch.cuda.empty_cache()
 
-    bbox,categories,confidence = model(cv2.imread(IMAGE_PATH))
-    print(bbox)
-    print(categories)
-    print(confidence)
+    bbox, categories, confidence = model(cv2.imread(IMAGE_PATH))
+    # print(bbox)
+    # print(categories)
+    # print(confidence)
