@@ -17,14 +17,14 @@ def main(cfg):
 
     # To evaluate GroundedSam2 performance I have to pass to him the classes of the dataset with which I perform the comparison
     classes = ' '.join(dataset.classes)
-    caption = "Retrieve me the following classes: "+ classes
+    caption = classes
     model = GroundedSam2(caption)  # call the model passing to it the caption
 
     # Evaluate IoU
-    # detector_metrics = IoU(model, dataset)
-    # average_iou = detector_metrics()
-    # print(f'Average IoU over the dataset: ')
-    # print(average_iou)
+    #detector_metrics = IoU(model, dataset)
+    #average_iou = detector_metrics()
+    #print(f'Average IoU over the dataset: ')
+    #print(average_iou)
 
     #Evaluate MAP
     detector_metrics = MAP(model, dataset)
