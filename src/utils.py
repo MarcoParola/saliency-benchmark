@@ -71,14 +71,12 @@ def retrieve_labels(param, class_id):
     return labels
 
 
-def save_annotated_images(label, image, results):
-    print(label)
-    print(results)
+def save_annotated_images(label, image, results, position):
+
     box_annotator = sv.BoxAnnotator(color=ColorPalette(colors=[sv.Color(255,0,0)]))
     annotated_frame = box_annotator.annotate(scene=image.copy(), detections=results)
 
-    label_annotator = sv.LabelAnnotator(color=ColorPalette(colors=[sv.Color(255,0,0)]))
-    print(label)
+    label_annotator = sv.LabelAnnotator(color=ColorPalette(colors=[sv.Color(255,0,0)]), text_position=position)
     annotated_frame = label_annotator.annotate(scene=annotated_frame, detections=results, labels=label)
 
     # Assuming 'annotated_frame' is a PIL Image object
@@ -87,54 +85,35 @@ def save_annotated_images(label, image, results):
 
     return annotated_frame
 
-    #cv2.imwrite(os.path.join(OUTPUT_DIR, "image_box_" + str(iteration) + ".jpg"), annotated_frame)
-
-    #mask_annotator = sv.MaskAnnotator()
-    #annotated_frame = mask_annotator.annotate(scene=annotated_frame, detections=results)
-    #cv2.imwrite(os.path.join(OUTPUT_DIR, "images_mask_" + str(iteration) + ".jpg"), annotated_frame)
-    # label all images in a folder called `context_images`
-    #model.label("../../../images", extension=".jpeg")
-
 
 def save_annotated(image, true_boxes, ground_truth_labels, predicted_boxes, label_predicted, score_predicted,
-                   label_pred_id, iteration):
-    results = sv.Detections(
-        xyxy=predicted_boxes,
-        confidence=score_predicted,
-        class_id=label_pred_id
-    )
-    image = save_annotated_images(label_predicted, image, results)
+                   label_pred_id, label_true_id, iteration):
 
-    image_rgb = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2RGB)  # Convert to RGB for Matplotlib
+    if len(predicted_boxes)>0:
+        #draw predicted bounding box
+        results = sv.Detections(
+            xyxy=np.array(predicted_boxes),
+            confidence=np.array(score_predicted),
+            class_id=np.array(label_pred_id)
+        )
 
-    # Create a plot
-    plt.imshow(image_rgb)
-    ax = plt.gca()
+        image = save_annotated_images(label_predicted, image, results, sv.Position.TOP_LEFT)
 
-    # Draw predicted bounding boxes in blue with labels
-    # for box,label in zip(predicted_boxes, label_predicted):
-    #     x_min, y_min, x_max, y_max = box
-    #
-    #     rect = plt.Rectangle((x_min, y_min), x_max - x_min, y_max - y_min, linewidth=2, edgecolor='blue',
-    #                          facecolor='none')
-    #     ax.add_patch(rect)
-    #     # Add the label text near the bounding box
-    #     ax.text(x_min, y_min - 5, label, color='blue', fontsize=10, weight='bold')
+    if len(true_boxes)>0:
+        #draw true bounding box
+        results = sv.Detections(
+            xyxy=np.array(true_boxes),
+            class_id=np.array(label_true_id)
+        )
 
-    # Draw true bounding boxes in green with labels
-    for box, label in zip(true_boxes, ground_truth_labels):
-        x_min, y_min, x_max, y_max = box
-        rect = plt.Rectangle((x_min, y_min), x_max - x_min, y_max - y_min, linewidth=2, edgecolor='green',
-                             facecolor='none')
-        ax.add_patch(rect)
-        # Add the label text near the bounding box
-        ax.text(x_max, y_min - 5, label, color='green', fontsize=10, weight='bold')
+        image = save_annotated_images(ground_truth_labels,image,results,sv.Position.TOP_RIGHT)
 
-    # Show the result
-    output_path = os.path.join(OUTPUT_DIR, "image_box_" + str(iteration) + ".jpg")
-    plt.axis('off')  # Turn off the axis
-    plt.savefig(output_path, bbox_inches='tight', pad_inches=0)  # Save the figure
-    plt.close()
+    image = image.astype(np.uint8)
+    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # Convert to RGB for Matplotlib
+
+    cv2.imwrite(os.path.join(OUTPUT_DIR, "image_box" + str(iteration) + ".jpg"), image_rgb)
+
+
 
 
 def get_save_model_callback(save_path):

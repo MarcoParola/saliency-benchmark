@@ -23,6 +23,7 @@ saliency:
   method: gradcam
 
 metrics:
+  name: map
   n_pixels: 500
   output_file: "finetuned_ResNet18_cifar10_gradcam.txt"
 

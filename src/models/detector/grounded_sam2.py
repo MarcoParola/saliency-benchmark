@@ -20,12 +20,13 @@ OUTPUT_DIR = "../../../output"
 
 def create_ontology_from_string(caption):
     print("caption:" + str(caption))
-    nlp = spacy.load("en_core_web_sm")
-    doc = nlp(caption)  #process the caption
+    # nlp = spacy.load("en_core_web_sm")
+    # doc = nlp(caption)  #process the caption
+
+    parts=caption.split("/")
 
     # Extract all nouns (both singular and plural)
-    nouns = list(set([token.lemma_ for token in doc if
-                      token.pos_ in ["NOUN", "PROPN"]]))  # lemma_ is used to convert plurals in singular
+    nouns = list(set([token for token in parts]))  # lemma_ is used to convert plurals in singular
 
     print("Nouns:")
     print('. '.join(nouns))
@@ -91,12 +92,12 @@ class GroundedSam2(nn.Module):
         bbox = results.xyxy
         categories = results.class_id
         confidence_score = results.confidence
-        print(bbox)
-        print(categories)
-        print(confidence_score)
+        # print(bbox)
+        # print(categories)
+        # print(confidence_score)
 
         keep_indices = torch.ops.torchvision.nms(torch.tensor(bbox), torch.tensor(confidence_score), iou_threshold=0.5)
-        print(keep_indices)
+        # print(keep_indices)
 
         bbox = bbox[keep_indices]
         categories = categories[keep_indices]

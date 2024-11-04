@@ -34,7 +34,7 @@ class DetectionDataset(torch.utils.data.Dataset):
         image = elem['image']
         bboxes = elem['objects']['bbox']
         bboxes = [from_xywh_to_xyxy(bbox) for bbox in bboxes]  # conversion from xywh to xyxy
-        categories = elem['objects']['category']
+        categories = elem['objects'][self.name_for_category]
         #categories = [self.classes[cat] for cat in categories] # in this way I have the text of the label and not the number
         return image, bboxes, categories
 
@@ -46,11 +46,13 @@ class AnimalDetectionDataset(DetectionDataset):
     def __init__(self, orig_dataset, transform=None):
         super().__init__(orig_dataset)
         self.classes = orig_dataset.info.features.to_dict()['objects']['feature']['category']['names'][1:11]
+        self.name_for_category = 'category'
 
 class CocoDetectionDataset(DetectionDataset):
     def __init__(self, orig_dataset, transform=None):
         super().__init__(orig_dataset)
         self.classes = orig_dataset.info.features.to_dict()['objects']['feature']['label']['names']
+        self.name_for_category = 'label'
 
 
 if __name__ == "__main__":

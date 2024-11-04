@@ -31,8 +31,8 @@ class DetectorMetrics:
             box_predicted, label_predicted, scores_predicted = self.model(image)
 
             #Mapping of the predicted label and the true ones
-            list_ontology = [pair[0] for pair in self.model.ontology.promptMap]
-            ground_truth_labels_elements = [self.dataset.classes[i-1] for i in ground_truth_labels]
+            list_ontology = self.model.ontology.classes()
+            ground_truth_labels_elements = [self.dataset.classes[i] for i in ground_truth_labels]
             ground_truth_labels = [list_ontology.index(elem) for elem in ground_truth_labels_elements]
 
             #Update metric
