@@ -11,6 +11,8 @@ import supervision as sv
 from supervision import ColorPalette
 from torchvision.ops import box_convert
 from typing import Tuple, List
+from PIL import Image
+import torchvision.transforms as transforms
 
 OUTPUT_DIR = "..\..\..\..\output"
 
@@ -61,36 +63,14 @@ def create_prompt_from_classes(text):
     prompt = '. '.join(nouns)
     return prompt
 
-
-def save_annotate_grounding_dino(image_source: np.ndarray, boxes: torch.Tensor, logits: torch.Tensor,
-                                 phrases: List[str]) -> np.ndarray:
-    h, w, _ = image_source.shape
-    boxes = boxes * torch.Tensor([w, h, w, h])
-    xyxy = box_convert(boxes=boxes, in_fmt="cxcywh", out_fmt="xyxy").numpy()
-    detections = sv.Detections(xyxy=xyxy, class_id=np.arange(len(boxes)))
-
-    labels = [
-        f"{phrase} {logit:.2f}"
-        for phrase, logit
-        in zip(phrases, logits)
-    ]
-
-    box_annotator = sv.BoxAnnotator()
-    annotated_frame = cv2.cvtColor(image_source, cv2.COLOR_RGB2BGR)
-    annotated_frame = box_annotator.annotate(scene=annotated_frame, detections=detections)
-    label_annotator = sv.LabelAnnotator(color=ColorPalette(colors=[sv.Color(255, 0, 0)]),
-                                        text_position=sv.Position.BOTTOM_LEFT)
-    annotated_frame = label_annotator.annotate(scene=annotated_frame, detections=detections, labels=labels)
-    return annotated_frame
-
-
 class GroundingDino(nn.Module):
-    def __init__(self):
+    def __init__(self,prompt):
         super(GroundingDino, self).__init__()
 
         # Define the directory and weights file path
-        weights_dir = "weights"
+        weights_dir = "../../../../weights"
         weights_file = os.path.join(weights_dir, "groundingdino_swint_ogc.pth")
+        print(weights_file)
         weights_url = "https://github.com/IDEA-Research/GroundingDINO/releases/download/v0.1.0-alpha/groundingdino_swint_ogc.pth"
 
         # Create the weights directory if it doesn't exist
@@ -109,34 +89,47 @@ class GroundingDino(nn.Module):
                 resources.path("weights", "groundingdino_swint_ogc.pth") as weights_path:
             self.model = load_model(str(config_path), str(weights_path))
 
-    def forward(self, image_path, prompt):
-        image_source, image = load_image(image_path)
-        print(image.type())
+        self.caption=create_prompt_from_classes(prompt)
+
+    def forward(self, image):
+        # Define the transformation
+        transform = transforms.Compose([
+            transforms.ToTensor(),  # Converts the image to a FloatTensor and scales the pixel values to [0, 1]
+        ])
+
+        # Apply the transformation
+        float_tensor = transform(image)
+
+        #print(float_tensor.shape)
+
+        # # Check to see channel of the images, if it has one channel, duplicate it across 3 channels
+        # if float_tensor.shape[0] == 1:
+        #     float_tensor = float_tensor.repeat(3,1,1)
 
         boxes, logits, phrases = predict(
             model=self.model,
-            image=image,
-            caption=create_prompt_from_classes(prompt),
+            image=float_tensor,
+            caption=self.caption,
             box_threshold=0.35,
-            text_threshold=0.25
+            text_threshold=0.25,
+            remove_combined=True
         )
-
-        annotated_frame = save_annotate_grounding_dino(image_source=image_source, boxes=boxes, logits=logits,
-                                                       phrases=phrases)
-        cv2.imwrite(os.path.join(OUTPUT_DIR, "image_box" + str(iteration) + ".jpg"), annotated_frame)
+        #annotated_frame = save_annotate_grounding_dino(image_source=image_source, boxes=boxes, logits=logits, phrases=phrases)
+        #cv2.imwrite(os.path.join(OUTPUT_DIR, "image_box" + str(iteration) + ".jpg"), annotated_frame)
         return boxes, phrases,logits
 
 
 if __name__ == '__main__':
-    caption = "cat chicken cow dog fox goat horse person racoon skunk"
+    caption = "cat/chicken/cow/dog/fox/goat/horse/person/racoon/skunk"
 
     IMAGE_PATH = "../../../images/racoons.jpg"
 
     torch.cuda.empty_cache()
 
-    model = GroundingDino()
+    model = GroundingDino(caption)
+    image_source, image = load_image(IMAGE_PATH) #image_source is an np.array, while image is a tensor
 
-    bbox, categories, confidence = model(IMAGE_PATH, caption)
+    bbox, categories, confidence = model(image_source)
     print(bbox)
     print(categories)
     print(confidence)

@@ -2,8 +2,10 @@ import numpy as np
 import torch
 from torch import tensor
 from torchmetrics.detection import IntersectionOverUnion, MeanAveragePrecision
+from torchvision.ops import box_convert
 
-from src.utils import from_array_to_dict, from_array_to_dict_predicted, save_annotated_images, save_annotated
+from src.utils import from_array_to_dict, from_array_to_dict_predicted, save_annotated_images, save_annotated, \
+    save_annotated_grounding_dino, from_normalized_cxcywh_to_xyxy
 
 
 class DetectorMetrics:
@@ -24,27 +26,55 @@ class DetectorMetrics:
         """
 
         for idx in range(self.dataset.__len__()):
+            print("IMG "+str(idx))
             # Get the ground truth bounding boxes and labels
             image, ground_truth_boxes, ground_truth_labels = self.dataset.__getitem__(idx)
+            #print("Ground truth boxes: ", ground_truth_boxes)
 
             # Predict using the model
             box_predicted, label_predicted, scores_predicted = self.model(image)
+            #print("label_predicted: ", label_predicted)
+            #print("Predicted boxes: ", box_predicted)
 
             #Mapping of the predicted label and the true ones
-            list_ontology = self.model.ontology.classes()
-            ground_truth_labels_elements = [self.dataset.classes[i] for i in ground_truth_labels]
-            ground_truth_labels = [list_ontology.index(elem) for elem in ground_truth_labels_elements]
+            if hasattr(self.model, 'ontology'):
+                #GroundedSam2
+                list_ontology = self.model.ontology.classes()
+                ground_truth_labels_elements = [self.dataset.classes[i] for i in ground_truth_labels]
+                ground_truth_labels = [list_ontology.index(elem) for elem in ground_truth_labels_elements]
+                label_predicted_elements = [list_ontology[i] for i in label_predicted]
+            else:
+                #GROUNDING DINO
+                ground_truth_labels_elements = [self.dataset.classes[i] for i in ground_truth_labels]
+                #print(ground_truth_labels_elements)
+                label_predicted_elements=label_predicted
+                #print(label_predicted_elements)
+                label_predicted = [self.dataset.classes.index(elem) for elem in label_predicted_elements]
+                #print(label_predicted)
+                box_predicted=from_normalized_cxcywh_to_xyxy(np.array(image),box_predicted)
+                #print(box_predicted)
+                scores_predicted=np.array(scores_predicted)
+                #print(scores_predicted)
 
             #Update metric
 
-            self.metric.update(from_array_to_dict_predicted(box_predicted, scores_predicted, label_predicted),
+            if len(ground_truth_boxes)>0:
+                self.metric.update(from_array_to_dict_predicted(box_predicted, scores_predicted, label_predicted),
                                from_array_to_dict(ground_truth_boxes, ground_truth_labels))
 
-            if idx<=100:
-                label_predicted_elements=[list_ontology[i] for i in label_predicted]
-                save_annotated(image, ground_truth_boxes, ground_truth_labels_elements,box_predicted,
-                               label_predicted_elements,scores_predicted,label_predicted, idx)
-
+            # if idx<=100:
+            #     if hasattr(self.model, 'ontology'):
+            #         #GROUNDEDSAM2 model
+            #         save_annotated(image, ground_truth_boxes, ground_truth_labels_elements,box_predicted,
+            #                        label_predicted_elements,scores_predicted,label_predicted,ground_truth_labels, idx)
+            #     else:
+            #         #GROUNDINGDINO MODEL
+            #         save_annotated_grounding_dino(image, ground_truth_boxes, ground_truth_labels_elements,box_predicted,
+            #                        label_predicted_elements,scores_predicted,label_predicted,ground_truth_labels, idx)
+            # else:
+            #     break
+            if idx>250:
+                break
 
         # Calculate average metric
         average_iou = self.metric.compute()

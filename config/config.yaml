@@ -7,12 +7,12 @@ currentDir: ${hydra:runtime.cwd}
 
 mainDir: C:\Users\MyPC\Desktop\Tesi\saliency-benckhmark
 
-model: VGG11_Weights.IMAGENET1K_V1
+model: GroundingDino
 seed: 42
 checkpoint: checkpoints\finetuned_VGG11_Weights.IMAGENET1K_V1oxford-iiit-pet\model-epoch=69-val_loss=3.09.ckpt
 
 dataset: 
-  name: francesco_animals
+  name: coco2017
   path: ./data
   resize: 224
 
@@ -23,7 +23,7 @@ saliency:
   method: gradcam
 
 metrics:
-  name: map
+  name: iou
   n_pixels: 500
   output_file: "finetuned_ResNet18_cifar10_gradcam.txt"
 
