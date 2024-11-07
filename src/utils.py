@@ -1,3 +1,5 @@
+from typing import List
+
 import torch
 import torchvision
 import numpy as np
@@ -7,6 +9,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from supervision import ColorPalette
 from torch import tensor
 from torchvision import transforms
+from torchvision.ops import box_convert
 
 import datasets
 from src.datasets.classification import load_classification_dataset
@@ -71,14 +74,11 @@ def retrieve_labels(param, class_id):
     return labels
 
 
-def save_annotated_images(label, image, results):
-    print(label)
-    print(results)
-    box_annotator = sv.BoxAnnotator(color=ColorPalette(colors=[sv.Color(255,0,0)]))
+def save_annotated_images(label, image, results, position):
+    box_annotator = sv.BoxAnnotator(color=ColorPalette(colors=[sv.Color(255, 0, 0)]))
     annotated_frame = box_annotator.annotate(scene=image.copy(), detections=results)
 
-    label_annotator = sv.LabelAnnotator(color=ColorPalette(colors=[sv.Color(255,0,0)]))
-    print(label)
+    label_annotator = sv.LabelAnnotator(color=ColorPalette(colors=[sv.Color(255, 0, 0)]), text_position=position)
     annotated_frame = label_annotator.annotate(scene=annotated_frame, detections=results, labels=label)
 
     # Assuming 'annotated_frame' is a PIL Image object
@@ -87,54 +87,85 @@ def save_annotated_images(label, image, results):
 
     return annotated_frame
 
-    #cv2.imwrite(os.path.join(OUTPUT_DIR, "image_box_" + str(iteration) + ".jpg"), annotated_frame)
-
-    #mask_annotator = sv.MaskAnnotator()
-    #annotated_frame = mask_annotator.annotate(scene=annotated_frame, detections=results)
-    #cv2.imwrite(os.path.join(OUTPUT_DIR, "images_mask_" + str(iteration) + ".jpg"), annotated_frame)
-    # label all images in a folder called `context_images`
-    #model.label("../../../images", extension=".jpeg")
-
 
 def save_annotated(image, true_boxes, ground_truth_labels, predicted_boxes, label_predicted, score_predicted,
-                   label_pred_id, iteration):
-    results = sv.Detections(
-        xyxy=predicted_boxes,
-        confidence=score_predicted,
-        class_id=label_pred_id
-    )
-    image = save_annotated_images(label_predicted, image, results)
+                   label_pred_id, label_true_id, iteration):
+    if len(predicted_boxes) > 0:
+        #draw predicted bounding box
+        results = sv.Detections(
+            xyxy=np.array(predicted_boxes),
+            confidence=np.array(score_predicted),
+            class_id=np.array(label_pred_id)
+        )
 
-    image_rgb = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2RGB)  # Convert to RGB for Matplotlib
+        image = save_annotated_images(label_predicted, image, results, sv.Position.TOP_LEFT)
 
-    # Create a plot
-    plt.imshow(image_rgb)
-    ax = plt.gca()
+    if len(true_boxes) > 0:
+        #draw true bounding box
+        results = sv.Detections(
+            xyxy=np.array(true_boxes),
+            class_id=np.array(label_true_id)
+        )
 
-    # Draw predicted bounding boxes in blue with labels
-    # for box,label in zip(predicted_boxes, label_predicted):
-    #     x_min, y_min, x_max, y_max = box
-    #
-    #     rect = plt.Rectangle((x_min, y_min), x_max - x_min, y_max - y_min, linewidth=2, edgecolor='blue',
-    #                          facecolor='none')
-    #     ax.add_patch(rect)
-    #     # Add the label text near the bounding box
-    #     ax.text(x_min, y_min - 5, label, color='blue', fontsize=10, weight='bold')
+        image = save_annotated_images(ground_truth_labels, image, results, sv.Position.TOP_RIGHT)
 
-    # Draw true bounding boxes in green with labels
-    for box, label in zip(true_boxes, ground_truth_labels):
-        x_min, y_min, x_max, y_max = box
-        rect = plt.Rectangle((x_min, y_min), x_max - x_min, y_max - y_min, linewidth=2, edgecolor='green',
-                             facecolor='none')
-        ax.add_patch(rect)
-        # Add the label text near the bounding box
-        ax.text(x_max, y_min - 5, label, color='green', fontsize=10, weight='bold')
+    image = image.astype(np.uint8)
+    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # Convert to RGB for Matplotlib
 
-    # Show the result
-    output_path = os.path.join(OUTPUT_DIR, "image_box_" + str(iteration) + ".jpg")
-    plt.axis('off')  # Turn off the axis
-    plt.savefig(output_path, bbox_inches='tight', pad_inches=0)  # Save the figure
-    plt.close()
+    cv2.imwrite(os.path.join(OUTPUT_DIR, "image_box" + str(iteration) + ".jpg"), image_rgb)
+
+def from_normalized_cxcywh_to_xyxy(image, boxes):
+    h, w, _ = image.shape
+    boxes = boxes * torch.Tensor([w, h, w, h])
+    xyxy = box_convert(boxes=boxes, in_fmt="cxcywh", out_fmt="xyxy").numpy()
+    return np.array(xyxy)
+
+def draw_grounding_dino_prediction(image_source: np.ndarray, boxes: torch.Tensor, logits: torch.Tensor,
+                                   phrases: List[str]) -> np.ndarray:
+    # h, w, _ = image_source.shape
+    # boxes = boxes * torch.Tensor([w, h, w, h])
+    # print("Final boxes:"+str(boxes))
+    #xyxy = box_convert(boxes=boxes, in_fmt="cxcywh", out_fmt="xyxy").numpy()
+    #print(xyxy)
+    #print(boxes)
+    detections = sv.Detections(xyxy=np.array(boxes), class_id=np.arange(len(boxes)))
+
+    labels = [
+        f"{phrase} {logit:.2f}"
+        for phrase, logit
+        in zip(phrases, logits)
+    ]
+
+    box_annotator = sv.BoxAnnotator(color=ColorPalette(colors=[sv.Color(0, 255, 0)]))
+    #annotated_frame = cv2.cvtColor(image_source, cv2.COLOR_RGB2BGR)
+    annotated_frame = box_annotator.annotate(scene=image_source, detections=detections)
+    label_annotator = sv.LabelAnnotator(color=ColorPalette(colors=[sv.Color(0, 255, 0)]),
+                                        text_position=sv.Position.BOTTOM_LEFT)
+    annotated_frame = label_annotator.annotate(scene=annotated_frame, detections=detections, labels=labels)
+    return annotated_frame
+
+
+def save_annotated_grounding_dino(image, true_boxes, ground_truth_labels, predicted_boxes, label_predicted,
+                                  score_predicted,
+                                  label_pred_id, label_true_id, iteration):
+    if len(predicted_boxes) > 0:
+        #draw predicted bounding box
+        image = draw_grounding_dino_prediction(np.array(image), torch.Tensor(predicted_boxes), score_predicted, label_predicted)
+
+    if len(true_boxes) > 0:
+        #draw true bounding box
+        results = sv.Detections(
+            xyxy=np.array(true_boxes),
+            class_id=np.array(label_true_id)
+        )
+
+        image = save_annotated_images(ground_truth_labels, image, results, sv.Position.TOP_RIGHT)
+
+    image = np.array(image)
+    image = image.astype(np.uint8)
+    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # Convert to RGB for Matplotlib
+
+    cv2.imwrite(os.path.join(OUTPUT_DIR, "image_box" + str(iteration) + ".jpg"), image_rgb)
 
 
 def get_save_model_callback(save_path):
