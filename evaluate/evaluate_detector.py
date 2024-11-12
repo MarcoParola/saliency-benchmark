@@ -21,7 +21,10 @@ def main(cfg):
     classes = '/'.join(dataset.classes)
     caption = classes
     if cfg.model == 'GroundedSam2':
-        model = GroundedSam2(caption)  # call the model passing to it the caption
+        if cfg.modelSam == 'Florence2':
+            model = GroundedSam2(caption,'Florence 2')  # call the model passing to it the caption
+        elif cfg.modelSam == 'GroundingDino':
+            model = GroundedSam2(caption,'Grounding DINO')
     elif cfg.model == 'GroundingDino':
         model = GroundingDino(caption)
 
@@ -35,7 +38,6 @@ def main(cfg):
 
     elif cfg.metrics.name == 'map':
         #Evaluate MAP
-        print(model.caption)
         detector_metrics = MAP(model, dataset)
         print(dataset.classes)
         avg_map = detector_metrics()

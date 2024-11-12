@@ -1,5 +1,7 @@
+import glob
 from typing import List
 
+import pandas as pd
 import torch
 import torchvision
 import numpy as np
@@ -21,9 +23,94 @@ from src.saliency_method.lime_method import lime_interface
 import supervision as sv
 import cv2
 from PIL import Image
+import xml.etree.ElementTree as ET
 import matplotlib.pyplot as plt
 
 OUTPUT_DIR = "..\..\..\..\output"
+
+
+def get_dataset_classes(annotation_dir):
+    classes = set()
+
+    for filename in os.listdir(annotation_dir):
+        if not filename.endswith(".xml"):
+            continue
+        filepath = os.path.join(annotation_dir, filename)
+
+        tree = ET.parse(filepath)
+        root = tree.getroot()
+
+        for obj in root.findall("object"):
+            class_name = obj.find("name").text
+            classes.add(class_name)
+
+    return sorted(classes)
+
+
+def handle_dataset_kaggle(images_dir, annotations_dir):
+    # Verify directories exist
+    if not os.path.isdir(images_dir) or not os.path.isdir(annotations_dir):
+        raise FileNotFoundError("Expected directories JPEGImages or Annotations not found in the dataset path")
+
+    # Retrieve all image-annotation pairs
+    dataset = []
+
+    # Collect image paths and corresponding annotation file paths
+    image_files = glob.glob(os.path.join(images_dir, "*.jpg"))
+    annotation_files = glob.glob(os.path.join(annotations_dir, "*.xml"))
+
+    # Create a dictionary of annotation files by their base name for easy lookup
+    annotations_dict = {os.path.splitext(os.path.basename(ann))[0]: ann for ann in annotation_files}
+
+    # Process each image file and retrieve bounding boxes
+    for image_file in image_files:
+        # Extract the file name without extension to find the corresponding XML annotation
+        image_id = os.path.splitext(os.path.basename(image_file))[0]
+        annotation_file = annotations_dict.get(image_id)
+
+        if annotation_file is None:
+            #print(f"No annotation file for {image_id}")
+            continue
+
+        # Parse the XML annotation file
+        tree = ET.parse(annotation_file)
+        root = tree.getroot()
+
+        # List of bounding boxes for this image
+        bboxes = []
+        for obj in root.findall("object"):
+            class_name = obj.find("name").text
+
+            # Get bounding box coordinates
+            bndbox = obj.find("bndbox")
+            xmin = int(bndbox.find("xmin").text)
+            ymin = int(bndbox.find("ymin").text)
+            xmax = int(bndbox.find("xmax").text)
+            ymax = int(bndbox.find("ymax").text)
+
+            # Append bounding box and class to the list
+            bboxes.append({
+                "class": class_name,
+                "xmin": xmin,
+                "ymin": ymin,
+                "xmax": xmax,
+                "ymax": ymax
+            })
+
+        # Store the image path and bounding boxes in the dataset
+        dataset.append({
+            "image_path": image_file,
+            "bboxes": bboxes
+        })
+
+    # Example of printing the image and bbox data
+    print("Number of images processed:", len(dataset))
+    print("Sample entry:")
+    print(dataset[0])
+
+    classes = get_dataset_classes(annotations_dir)
+    print(classes)
+    return dataset, classes
 
 
 def from_xywh_to_xyxy(bbox):
