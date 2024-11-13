@@ -33,12 +33,12 @@ def load_detection_dataset(dataset_name):
         path = kagglehub.dataset_download("gopalbhattrai/pascal-voc-2012-dataset")
 
         # Paths to images and annotations directories
-        images_dir = os.path.join(path, "VOC2012_test\VOC2012_test\JPEGImages")
-        annotations_dir = os.path.join(path, "VOC2012_test\VOC2012_test\Annotations")
+        images_dir = os.path.join(path, "VOC2012_train_val\VOC2012_train_val\JPEGImages")
+        annotations_dir = os.path.join(path, "VOC2012_train_val\VOC2012_train_val\Annotations")
 
-        ds,classes = handle_dataset_kaggle(images_dir=images_dir, annotations_dir=annotations_dir)
+        ds, classes = handle_dataset_kaggle(images_dir=images_dir, annotations_dir=annotations_dir)
         print(classes)
-        dataset = PascalVocDataset(ds,classes)
+        dataset = PascalVocDataset(ds, classes)
 
     return dataset
 
@@ -87,9 +87,9 @@ class CocoDetectionDataset(DetectionDataset):
 
 
 class PascalVocDataset(torch.utils.data.Dataset):
-    def __init__(self, dataset,classes):
-        self.ds=dataset
-        self.classes=classes
+    def __init__(self, dataset, classes):
+        self.ds = dataset
+        self.classes = classes
 
     def __len__(self):
         return len(self.ds)
@@ -106,8 +106,9 @@ class PascalVocDataset(torch.utils.data.Dataset):
         image = ToPILImage()(image)
         # print(type(image))
         bboxes_object = elem['bboxes']
-        bboxes = [[bbox['xmin'],bbox['ymin'],bbox['xmax'],bbox['ymax']] for bbox in bboxes_object]
-        categories = [self.classes.index(bbox['class']) for bbox in bboxes_object]  # categories has to be in integer format
+        bboxes = [[bbox['xmin'], bbox['ymin'], bbox['xmax'], bbox['ymax']] for bbox in bboxes_object]
+        categories = [self.classes.index(bbox['class']) for bbox in
+                      bboxes_object]  # categories has to be in integer format
         return image, bboxes, categories
 
     def __iter__(self):
@@ -116,13 +117,28 @@ class PascalVocDataset(torch.utils.data.Dataset):
 
 if __name__ == "__main__":
 
-    dataset = load_detection_dataset("pascal_voc")
-    print(dataset.__len__())
-    print(dataset)
-    for i in range(10):
-        img, bbox, categories = dataset.__getitem__(i)
-        # test su shape
-        print(img.size)
-        print(img.mode)
-        print(bbox)
-        print(categories)
+    list_datasets = ["francesco_animals", "coco2017", "pascal_voc"]
+    for dataset_name in list_datasets:
+        dataset = load_detection_dataset(dataset_name)
+        print(dataset.__len__())
+        print(dataset.classes)
+
+        data = {
+            'id_class': list(range(0, len(dataset.classes))),
+            'name_class': dataset.classes,
+            'occurrences': [0] * len(dataset.classes)
+        }
+        df = pd.DataFrame(data)
+        print(df)
+        for i in range(dataset.__len__()):
+            img, bbox, categories = dataset.__getitem__(i)
+            # test su shape
+            # print(img.size)
+            # print(img.mode)
+            # print(bbox)
+            #print(categories)
+            for cat in categories:
+                df.loc[cat, 'occurrences'] += 1
+
+        print(df)
+        df.to_csv('stats_dataset' + str(dataset_name) + '.csv')

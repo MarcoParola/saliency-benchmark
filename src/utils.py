@@ -83,10 +83,10 @@ def handle_dataset_kaggle(images_dir, annotations_dir):
 
             # Get bounding box coordinates
             bndbox = obj.find("bndbox")
-            xmin = int(bndbox.find("xmin").text)
-            ymin = int(bndbox.find("ymin").text)
-            xmax = int(bndbox.find("xmax").text)
-            ymax = int(bndbox.find("ymax").text)
+            xmin = float(bndbox.find("xmin").text)
+            ymin = float(bndbox.find("ymin").text)
+            xmax = float(bndbox.find("xmax").text)
+            ymax = float(bndbox.find("ymax").text)
 
             # Append bounding box and class to the list
             bboxes.append({

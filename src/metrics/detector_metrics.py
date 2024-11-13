@@ -12,6 +12,9 @@ class DetectorMetrics:
     def __init__(self, model, dataset):
         self.model = model
         self.dataset = dataset
+        # class_metric=True should add also the metric for each class
+        self.iou = IntersectionOverUnion(box_format='xyxy', iou_threshold=0.5, respect_labels=False, class_metrics=True)
+        self.map = MeanAveragePrecision(box_format='xyxy', iou_type='bbox', class_metrics=True)
 
     def __call__(self):
         """
@@ -46,7 +49,10 @@ class DetectorMetrics:
             #Update metric
 
             if len(ground_truth_boxes)>0:
-                self.metric.update(from_array_to_dict_predicted(box_predicted, scores_predicted, label_predicted),
+                self.iou.update(from_array_to_dict_predicted(box_predicted, scores_predicted, label_predicted),
+                               from_array_to_dict(ground_truth_boxes, ground_truth_labels))
+
+                self.map.update(from_array_to_dict_predicted(box_predicted, scores_predicted, label_predicted),
                                from_array_to_dict(ground_truth_boxes, ground_truth_labels))
 
             # if idx<=100:
@@ -59,23 +65,13 @@ class DetectorMetrics:
                  break
 
         # Calculate average metric
-        average_iou = self.metric.compute()
+        average_iou = self.iou.compute()
+        average_map = self.map.compute()
 
-        self.metric.reset()
+        self.iou.reset()
+        self.map.reset()
 
-        return average_iou
-
-
-class IoU(DetectorMetrics):
-    def __init__(self, model, dataset):
-        super().__init__(model,dataset)
-        self.metric = IntersectionOverUnion(box_format='xyxy', iou_threshold=0.5, respect_labels=False)
-
-
-class MAP(DetectorMetrics):
-    def __init__(self, model, dataset):
-        super().__init__(model, dataset)
-        self.metric = MeanAveragePrecision(box_format='xyxy', iou_type='bbox')
+        return average_iou, average_map
 
 
 # Example usage
