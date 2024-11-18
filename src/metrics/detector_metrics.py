@@ -7,6 +7,14 @@ from torchvision.ops import box_convert
 from src.utils import from_array_to_dict, from_array_to_dict_predicted, save_annotated_images, save_annotated, \
     save_annotated_grounding_dino, from_normalized_cxcywh_to_xyxy
 
+import scipy.stats
+
+def mean_confidence_interval(data, confidence=0.95):
+    a = 1.0 * np.array(data)
+    n = len(a)
+    m, se = np.mean(a), scipy.stats.sem(a)
+    h = se * scipy.stats.t.ppf((1 + confidence) / 2., n-1)
+    return m, m-h, m+h, h
 
 class DetectorMetrics:
     def __init__(self, model, dataset):
@@ -32,11 +40,11 @@ class DetectorMetrics:
             print("IMG "+str(idx))
             # Get the ground truth bounding boxes and labels
             image, ground_truth_boxes, ground_truth_labels = self.dataset.__getitem__(idx)
-            print("Ground truth labels: ", ground_truth_labels)
+            #print("Ground truth labels: ", ground_truth_labels)
 
             # Predict using the model
             box_predicted, label_predicted, scores_predicted = self.model(image)
-            print("label_predicted: ", label_predicted)
+            #print("label_predicted: ", label_predicted)
             #print("Predicted boxes: ", box_predicted)
 
             #Mapping of the predicted label and the true ones
@@ -61,17 +69,29 @@ class DetectorMetrics:
             #                     label_predicted_elements,scores_predicted,label_predicted,ground_truth_labels, idx)
             # else:
             #     break
-            if idx>100:
+            if idx>500:
                  break
 
         # Calculate average metric
         average_iou = self.iou.compute()
+        iou_class_list = [float(value) for key, value in average_iou.items() if 'iou/cl_' in key]
+        print(iou_class_list)
+        mean_iou,min_iou,max_iou, confidence_interval_iou = mean_confidence_interval(iou_class_list)
+        print("mean_iou:",mean_iou)
+        print("min_iou:",min_iou)
+        print("max_iou:",max_iou)
         average_map = self.map.compute()
+        map_class_list = np.array(average_map['map_per_class'])
+        print(map_class_list)
+        mean_map, min_map, max_map, confidence_interval_map = mean_confidence_interval(map_class_list)
+        print("mean_map:",mean_map)
+        print("min_map:",min_map)
+        print("max_map:",max_map)
 
         self.iou.reset()
         self.map.reset()
 
-        return average_iou, average_map
+        return average_iou, average_map, confidence_interval_iou, confidence_interval_map
 
 
 # Example usage

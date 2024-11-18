@@ -30,11 +30,11 @@ def load_detection_dataset(dataset_name):
 
     if dataset_name == 'pascal_voc':
         # Download latest version
-        path = kagglehub.dataset_download("gopalbhattrai/pascal-voc-2012-dataset")
+        path = kagglehub.dataset_download("zaraks/pascal-voc-2007")
 
         # Paths to images and annotations directories
-        images_dir = os.path.join(path, "VOC2012_train_val\VOC2012_train_val\JPEGImages")
-        annotations_dir = os.path.join(path, "VOC2012_train_val\VOC2012_train_val\Annotations")
+        images_dir = os.path.join(path, "VOCtest_06-Nov-2007\VOCdevkit\VOC2007\JPEGImages")
+        annotations_dir = os.path.join(path, "VOCtest_06-Nov-2007\VOCdevkit\VOC2007\Annotations")
 
         ds, classes = handle_dataset_kaggle(images_dir=images_dir, annotations_dir=annotations_dir)
         print(classes)
