@@ -17,6 +17,20 @@ from src.utils import save_annotated_images
 
 OUTPUT_DIR = "../../../output"
 
+import requests
+
+
+def get_wikipedia_description(word):
+    url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{word}"
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        data = response.json()
+        # Extract the summary of the page
+        description = data.get('extract', 'No description found.')
+        return description
+    else:
+        return "Sorry, no description found."
 
 def create_ontology_from_string(caption):
     print("caption:" + str(caption))
@@ -33,6 +47,8 @@ def create_ontology_from_string(caption):
 
     #Create dictionary for ontology mapping each nouns in itself
     ontology_dict = {word: word for word in nouns}
+    #ontology_dict = {get_wikipedia_description(word):word for word in nouns}
+    print(ontology_dict)
     return CaptionOntology(ontology_dict)
 
 
@@ -65,12 +81,13 @@ def save_annotated_images_grounded(model, image, results):
 
 
 class GroundedSam2(nn.Module):
-    def __init__(self, prompt):
+    def __init__(self, prompt, model_name):
         super(GroundedSam2, self).__init__()
+        print("model: " + model_name)
 
         self.model = GroundedSAM2(
             ontology=create_ontology_from_string(prompt),
-            model="Grounding DINO",  # Choose "Florence 2" or "Grounding DINO"
+            model=model_name,  # Choose "Florence 2" or "Grounding DINO"
             grounding_dino_box_threshold=0.4,
             grounding_dino_text_threshold=0.3
         )
@@ -84,7 +101,7 @@ class GroundedSam2(nn.Module):
                 results = self.model.predict(image)
 
         #print(results)
-        print(self.model.ontology.classes())
+        #print(self.model.ontology.classes())
 
         # if debug is True:
         #save_annotated_images_grounded(self.model, image, results)

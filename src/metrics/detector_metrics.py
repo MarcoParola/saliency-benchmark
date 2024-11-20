@@ -7,11 +7,22 @@ from torchvision.ops import box_convert
 from src.utils import from_array_to_dict, from_array_to_dict_predicted, save_annotated_images, save_annotated, \
     save_annotated_grounding_dino, from_normalized_cxcywh_to_xyxy
 
+import scipy.stats
+
+def mean_confidence_interval(data, confidence=0.95):
+    a = 1.0 * np.array(data)
+    n = len(a)
+    m, se = np.mean(a), scipy.stats.sem(a)
+    h = se * scipy.stats.t.ppf((1 + confidence) / 2., n-1)
+    return m, m-h, m+h, h
 
 class DetectorMetrics:
     def __init__(self, model, dataset):
         self.model = model
         self.dataset = dataset
+        # class_metric=True should add also the metric for each class
+        self.iou = IntersectionOverUnion(box_format='xyxy', iou_threshold=0.5, respect_labels=False, class_metrics=True)
+        self.map = MeanAveragePrecision(box_format='xyxy', iou_type='bbox', class_metrics=True)
 
     def __call__(self):
         """
@@ -29,7 +40,7 @@ class DetectorMetrics:
             print("IMG "+str(idx))
             # Get the ground truth bounding boxes and labels
             image, ground_truth_boxes, ground_truth_labels = self.dataset.__getitem__(idx)
-            #print("Ground truth boxes: ", ground_truth_boxes)
+            #print("Ground truth labels: ", ground_truth_labels)
 
             # Predict using the model
             box_predicted, label_predicted, scores_predicted = self.model(image)
@@ -37,63 +48,50 @@ class DetectorMetrics:
             #print("Predicted boxes: ", box_predicted)
 
             #Mapping of the predicted label and the true ones
-            if hasattr(self.model, 'ontology'):
-                #GroundedSam2
-                list_ontology = self.model.ontology.classes()
-                ground_truth_labels_elements = [self.dataset.classes[i] for i in ground_truth_labels]
-                ground_truth_labels = [list_ontology.index(elem) for elem in ground_truth_labels_elements]
-                label_predicted_elements = [list_ontology[i] for i in label_predicted]
-            else:
-                #GROUNDING DINO
-                ground_truth_labels_elements = [self.dataset.classes[i] for i in ground_truth_labels]
-                #print(ground_truth_labels_elements)
-                label_predicted_elements=label_predicted
-                #print(label_predicted_elements)
-                label_predicted = [self.dataset.classes.index(elem) for elem in label_predicted_elements]
-                #print(label_predicted)
-                box_predicted=from_normalized_cxcywh_to_xyxy(np.array(image),box_predicted)
-                #print(box_predicted)
-                scores_predicted=np.array(scores_predicted)
-                #print(scores_predicted)
+            #GroundedSam2
+            list_ontology = self.model.ontology.classes()
+            ground_truth_labels_elements = [self.dataset.classes[i] for i in ground_truth_labels]
+            ground_truth_labels = [list_ontology.index(elem) for elem in ground_truth_labels_elements]
+            label_predicted_elements = [list_ontology[i] for i in label_predicted]
 
             #Update metric
 
             if len(ground_truth_boxes)>0:
-                self.metric.update(from_array_to_dict_predicted(box_predicted, scores_predicted, label_predicted),
+                self.iou.update(from_array_to_dict_predicted(box_predicted, scores_predicted, label_predicted),
+                               from_array_to_dict(ground_truth_boxes, ground_truth_labels))
+
+                self.map.update(from_array_to_dict_predicted(box_predicted, scores_predicted, label_predicted),
                                from_array_to_dict(ground_truth_boxes, ground_truth_labels))
 
             # if idx<=100:
-            #     if hasattr(self.model, 'ontology'):
-            #         #GROUNDEDSAM2 model
-            #         save_annotated(image, ground_truth_boxes, ground_truth_labels_elements,box_predicted,
-            #                        label_predicted_elements,scores_predicted,label_predicted,ground_truth_labels, idx)
-            #     else:
-            #         #GROUNDINGDINO MODEL
-            #         save_annotated_grounding_dino(image, ground_truth_boxes, ground_truth_labels_elements,box_predicted,
-            #                        label_predicted_elements,scores_predicted,label_predicted,ground_truth_labels, idx)
+            #     #GROUNDEDSAM2 model
+            #     save_annotated(image, ground_truth_boxes, ground_truth_labels_elements,box_predicted,
+            #                     label_predicted_elements,scores_predicted,label_predicted,ground_truth_labels, idx)
             # else:
             #     break
-            if idx>250:
-                break
+            if idx>500:
+                 break
 
         # Calculate average metric
-        average_iou = self.metric.compute()
+        average_iou = self.iou.compute()
+        iou_class_list = [float(value) for key, value in average_iou.items() if 'iou/cl_' in key]
+        print(iou_class_list)
+        mean_iou,min_iou,max_iou, confidence_interval_iou = mean_confidence_interval(iou_class_list)
+        print("mean_iou:",mean_iou)
+        print("min_iou:",min_iou)
+        print("max_iou:",max_iou)
+        average_map = self.map.compute()
+        map_class_list = np.array(average_map['map_per_class'])
+        print(map_class_list)
+        mean_map, min_map, max_map, confidence_interval_map = mean_confidence_interval(map_class_list)
+        print("mean_map:",mean_map)
+        print("min_map:",min_map)
+        print("max_map:",max_map)
 
-        self.metric.reset()
+        self.iou.reset()
+        self.map.reset()
 
-        return average_iou
-
-
-class IoU(DetectorMetrics):
-    def __init__(self, model, dataset):
-        super().__init__(model,dataset)
-        self.metric = IntersectionOverUnion(box_format='xyxy', iou_threshold=0.5, respect_labels=False)
-
-
-class MAP(DetectorMetrics):
-    def __init__(self, model, dataset):
-        super().__init__(model, dataset)
-        self.metric = MeanAveragePrecision(box_format='xyxy', iou_type='bbox')
+        return average_iou, average_map, confidence_interval_iou, confidence_interval_map
 
 
 # Example usage
