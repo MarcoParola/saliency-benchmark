@@ -25,13 +25,13 @@ To install the project, follow these steps:
 4. **Activate the virtual environment:**
 
     ```bash
-    . env/bin/activate
+    env/Scripts/activate
     ```
 
 5. **Install the dependencies:**
 
     ```bash
-    python -m pip install -r requirements.txt
+    ./setup.bat
     ```
 
 These steps will set up your working environment, install necessary dependencies, and prepare you to run the project.
