@@ -17,18 +17,18 @@ if GlobalHydra().is_initialized():
 def main(cfg):
     start_timestamp = datetime.now()
     # Retrieve dataset
-    dataset = load_detection_dataset(cfg.dataset.name)
+    dataset = load_detection_dataset(cfg.datasetDet.name)
 
     # To evaluate GroundedSam2 performance I have to pass to him the classes of the dataset with which I perform the
     # comparison
     classes = '/'.join(dataset.classes)
     caption = classes
-    if cfg.model == 'GroundedSam2':
+    if cfg.modelDet == 'GroundedSam2':
         if cfg.modelSam == 'Florence2':
             model = GroundedSam2(caption, 'Florence 2')  # call the model passing to it the caption
         elif cfg.modelSam == 'GroundingDino':
             model = GroundedSam2(caption, 'Grounding DINO')
-    elif cfg.model == 'GroundingDino':
+    elif cfg.modelDet == 'GroundingDino':
         model = GroundingDino(caption)
 
     #Evaluate IoU and MAP

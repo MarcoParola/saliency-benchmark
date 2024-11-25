@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import os
 from torchvision import transforms
-
+import torchvision
 import datasets
 
 
@@ -165,7 +165,6 @@ class ClassificationDataset(torch.utils.data.Dataset):
 
 
 if __name__ == "__main__":
-    import torchvision
 
     train, val, test = load_classification_dataset('cifar10', 'data', 224)
     dataset = ClassificationDataset(train)

@@ -65,7 +65,7 @@ def main(cfg):
 
     # Load test dataset
     data_dir = os.path.join(cfg.mainDir, cfg.dataset.path)
-    train, val, test = load_dataset(cfg.dataset.name, data_dir, cfg.dataset.resize)
+    train, val, test = load_classification_dataset(cfg.dataset.name, data_dir, cfg.dataset.resize)
     dataset = ClassificationDataset(test)
     dataloader = data.DataLoader(dataset, batch_size=cfg.train.batch_size, shuffle=True)
 
@@ -102,6 +102,7 @@ def main(cfg):
                 break
 
             image = images[i]
+            image = image.cpu()
             saliency = saliency_maps[i]
             predicted_class = preds[i]
             true_class = labels[i]
