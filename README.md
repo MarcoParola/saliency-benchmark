@@ -75,7 +75,7 @@ You need to specify the following parameters in the [config.yaml](config/config.
 
 After training and testing the model you can evaluate the explainability of the model by using the following command: 
 ```bash
-python3 evaluate_saliency.py
+python3 evaluate/evaluate_saliency.py
 ```
 You need to specify the following parameters in the [config.yaml](config/config.yaml) file:
 - `model`: The pre-trained model to use.
@@ -83,3 +83,10 @@ You need to specify the following parameters in the [config.yaml](config/config.
 - `checkpoint`: Path to the model checkpoint. Choose from the model checkpoints available in the **checkpoints** folder.
 - `saliency.method`: Saliency method used for evaluating the model's explanations. The supported methods are: `gradcam`, `rise`, `sidu`, `lime`.
 - `metrics.output_file`: Specifies the file name for saving the evaluation metrics.
+
+## Evaluate Detection
+
+You can evaluate the object detection method by using the following command:
+```bash
+python3 evaluate/evaluate_detector.py
+```
