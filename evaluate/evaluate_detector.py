@@ -1,3 +1,5 @@
+import os
+
 import hydra
 from datasets import load_dataset
 
@@ -15,6 +17,23 @@ if GlobalHydra().is_initialized():
 
 @hydra.main(config_path='../config', config_name='config')
 def main(cfg):
+
+    current_path = os.path.abspath(__file__)
+    print(f"Path corrente: {current_path}")
+
+    file_name="../../../evaluate/test_evaluate_detector.txt"
+
+    with open(file_name, "a") as file:
+        print("printing on file")
+        file.write("------------------------------------------------TEST----------------------------------------------------------------------------------\n")
+        file.write("Dataset:"+str(cfg.datasetDet)+"\n")
+        file.write("Modello:" + str(cfg.modelDet) + "\n")
+        file.write("Modello Sam:" + str(cfg.modelSam) + "\n")
+
+    # Mostra il path assoluto del file
+    absolute_path = os.path.abspath(file_name)
+    print(f"Il file è stato salvato in: {absolute_path}")
+
     start_timestamp = datetime.now()
     # Retrieve dataset
     dataset = load_detection_dataset(cfg.datasetDet.name)
@@ -34,18 +53,19 @@ def main(cfg):
     #Evaluate IoU and MAP
     detector_metrics = DetectorMetrics(model,dataset)
     avg_iou, avg_map, confidence_iou, confidence_map = detector_metrics()
-    print("Average IoU over the dataset: ")
-    print(avg_iou)
-    print("Average MAP over the dataset: ")
-    print(avg_map)
-    print("Confidence IoU over the dataset: ")
-    print(confidence_iou)
-    print("Confidence MAP over the dataset: ")
-    print(confidence_map)
+    with open(file_name, "a") as file:
+        file.write("Average IoU over the dataset:\n")
+        file.write(f"{avg_iou}\n")
+        file.write("Average MAP over the dataset:\n")
+        file.write(f"{avg_map}\n")
+        file.write("Confidence IoU over the dataset:\n")
+        file.write(f"{confidence_iou}\n")
+        file.write("Confidence MAP over the dataset:\n")
+        file.write(f"{confidence_map}\n")
 
-    endtime = datetime.now()
-    duration = endtime - start_timestamp
-    print("Duration: " + str(duration))
+        endtime = datetime.now()
+        duration = endtime - start_timestamp
+        file.write("Duration: " + str(duration) + "\n")
 
 
 if __name__ == "__main__":

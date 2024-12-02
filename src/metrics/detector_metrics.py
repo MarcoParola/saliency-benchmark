@@ -3,6 +3,7 @@ import torch
 from torch import tensor
 from torchmetrics.detection import IntersectionOverUnion, MeanAveragePrecision
 from torchvision.ops import box_convert
+from torchvision.transforms import ToPILImage
 
 from src.utils import from_array_to_dict, from_array_to_dict_predicted, save_annotated_images, save_annotated, \
     save_annotated_grounding_dino, from_normalized_cxcywh_to_xyxy
@@ -43,7 +44,7 @@ class DetectorMetrics:
             #print("Ground truth labels: ", ground_truth_labels)
 
             # Predict using the model
-            box_predicted, label_predicted, scores_predicted = self.model(image)
+            box_predicted, label_predicted, scores_predicted = self.model(ToPILImage()(image))
             #print("label_predicted: ", label_predicted)
             #print("Predicted boxes: ", box_predicted)
 
@@ -69,24 +70,31 @@ class DetectorMetrics:
             #                     label_predicted_elements,scores_predicted,label_predicted,ground_truth_labels, idx)
             # else:
             #     break
-            if idx>500:
+            if idx>1000:
                  break
 
         # Calculate average metric
         average_iou = self.iou.compute()
         iou_class_list = [float(value) for key, value in average_iou.items() if 'iou/cl_' in key]
-        print(iou_class_list)
         mean_iou,min_iou,max_iou, confidence_interval_iou = mean_confidence_interval(iou_class_list)
-        print("mean_iou:",mean_iou)
-        print("min_iou:",min_iou)
-        print("max_iou:",max_iou)
         average_map = self.map.compute()
         map_class_list = np.array(average_map['map_per_class'])
-        print(map_class_list)
         mean_map, min_map, max_map, confidence_interval_map = mean_confidence_interval(map_class_list)
-        print("mean_map:",mean_map)
-        print("min_map:",min_map)
-        print("max_map:",max_map)
+
+
+        with open("../../../evaluate/test_evaluate_detector.txt", "a") as file:
+            file.write("iou class list:"+str(iou_class_list)+"\n")
+            file.write("mean_iou:"+str(mean_iou)+"\n")
+            file.write("min_iou:" + str(min_iou)+"\n")
+            file.write("max_iou:" + str(max_iou)+"\n")
+            file.write("confidence iou:"+ str(confidence_interval_iou)+"\n")
+            file.write("map class list:" + str(map_class_list)+"\n")
+            file.write("mean_map:" + str(mean_map)+"\n")
+            file.write("min_map:" + str(min_map)+"\n")
+            file.write("max_map:" + str(max_map)+"\n")
+            file.write("confidence map:" + str(confidence_interval_map)+"\n")
+
+
 
         self.iou.reset()
         self.map.reset()

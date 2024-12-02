@@ -12,6 +12,7 @@ from supervision import ColorPalette
 from torch import tensor
 from torchvision import transforms
 from torchvision.ops import box_convert
+from torchvision.transforms import ToPILImage
 
 import datasets
 from src.datasets.classification import load_classification_dataset
@@ -120,6 +121,14 @@ def from_xywh_to_xyxy(bbox):
     new_box[3] = abs(bbox[1] + bbox[3])
     return new_box
 
+def resize_boxes(bbox, scale_x, scale_y):
+    # Scale the bounding box coordinates
+    bbox[0] *= scale_x  # Scale x_min and x_max
+    bbox[2] *= scale_x
+    bbox[1] *= scale_y  # Scale y_min and y_max
+    bbox[3] *= scale_y
+    return bbox
+
 
 def from_array_to_dict(boxes_vector, labels_vector):
     # print(boxes_vector)
@@ -162,6 +171,7 @@ def retrieve_labels(param, class_id):
 
 
 def save_annotated_images(label, image, results, position):
+    image = ToPILImage()(image)
     box_annotator = sv.BoxAnnotator(color=ColorPalette(colors=[sv.Color(255, 0, 0)]))
     annotated_frame = box_annotator.annotate(scene=image.copy(), detections=results)
 
