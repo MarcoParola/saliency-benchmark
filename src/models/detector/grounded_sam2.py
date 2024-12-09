@@ -1,21 +1,27 @@
 import json
 import os
+import random
 
 import numpy as np
 import torch.nn as nn
 import torch
 from PIL import Image
-from autodistill_grounded_sam_2 import GroundedSAM2
 from autodistill.utils import plot
 import cv2
-import spacy
 from autodistill.detection import CaptionOntology
 import supervision as sv
+from autodistill_grounded_sam_2 import GroundedSAM2
+from matplotlib import pyplot as plt
+from sam2.automatic_mask_generator import SAM2AutomaticMaskGenerator
+from sam2.build_sam import build_sam2
+from segment_anything import sam_model_registry
 from supervision.draw.color import ColorPalette
+from segment_anything.automatic_mask_generator import SamAutomaticMaskGenerator
+
 
 from src.utils import save_annotated_images
 
-OUTPUT_DIR = "../../../output"
+OUTPUT_DIR = "../../../images"
 
 import requests
 
@@ -30,7 +36,7 @@ def get_wikipedia_description(word):
         description = data.get('extract', 'No description found.')
         return description
     else:
-        return "Sorry, no description found."
+        return "Sorry, no description found."+chr(random.randint(32,126))
 
 def create_ontology_from_string(caption):
     print("caption:" + str(caption))
@@ -80,6 +86,21 @@ def save_annotated_images_grounded(model, image, results):
     #model.label("../../../images", extension=".jpeg")
 
 
+def show_anns(anns):
+    if len(anns) == 0:
+        return
+    sorted_anns = sorted(anns, key=(lambda x: x['area']), reverse=True)
+    ax = plt.gca()
+    ax.set_autoscale_on(False)
+
+    img = np.ones((sorted_anns[0]['segmentation'].shape[0], sorted_anns[0]['segmentation'].shape[1], 4))
+    img[:, :, 3] = 0
+    for ann in sorted_anns:
+        m = ann['segmentation']
+        color_mask = np.concatenate([np.random.random(3), [0.35]])
+        img[m] = color_mask
+    ax.imshow(img)
+
 class GroundedSam2(nn.Module):
     def __init__(self, prompt, model_name):
         super(GroundedSam2, self).__init__()
@@ -109,9 +130,7 @@ class GroundedSam2(nn.Module):
         bbox = results.xyxy
         categories = results.class_id
         confidence_score = results.confidence
-        # print(bbox)
-        # print(categories)
-        # print(confidence_score)
+
 
         keep_indices = torch.ops.torchvision.nms(torch.tensor(bbox), torch.tensor(confidence_score), iou_threshold=0.5)
         # print(keep_indices)
@@ -119,9 +138,7 @@ class GroundedSam2(nn.Module):
         bbox = bbox[keep_indices]
         categories = categories[keep_indices]
         confidence_score = confidence_score[keep_indices]
-        # print(bbox)
-        # print(categories)
-        # print(confidence_score)
+
 
         if bbox.ndim == 1:  #se dopo NMS resta una sola box
             bbox = np.expand_dims(bbox, axis=0)
@@ -142,18 +159,72 @@ class GroundedSam2(nn.Module):
         return bbox, categories, confidence_score
 
 
+    def automatic_mask_generation(self, image):
+
+        # select the device for computation
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+        else:
+            device = torch.device("cpu")
+
+        #USANDO REPO SAM2
+
+        sam2_checkpoint = "~/.cache/autodistill/segment_anything_2/sam2_hiera_large.pt"
+        checkpoint = os.path.expanduser(sam2_checkpoint)
+        model_cfg = "sam2_hiera_l.yaml"
+        
+        sam2 = build_sam2(model_cfg, checkpoint, device=device, apply_postprocessing=False)
+        print(self.model.sam_2_predictor.model)
+        mask_generator = SAM2AutomaticMaskGenerator(model=sam2)
+
+        #USANDO REPO SAM_ANYTHING
+
+        # sam_checkpoint = "sam_vit_h_4b8939.pth"
+        # model_type = "vit_h"
+        #
+        # device = "cuda"
+        #
+        # sam = sam_model_registry[model_type](checkpoint=sam_checkpoint)
+        # sam.to(device=device)
+        #
+        # mask_generator = SamAutomaticMaskGenerator(sam)
+        #mask_generator = SamAutomaticMaskGenerator(self.model.sam_2_predictor.model)
+        #print(mask_generator)
+
+        masks = mask_generator.generate(image)
+        print(masks)
+        print(len(masks))
+        print(masks[0].keys())
+        plt.figure(figsize=(20, 20))
+        plt.imshow(image)
+        show_anns(masks)
+        plt.axis('off')
+        plt.show()
+
+
+
 if __name__ == '__main__':
-    caption = "cat chicken cow dog fox goat horse person racoon skunk"
+    caption = "cat/chicken/cow/dog/fox/goat/horse/person/racoon/skunk"
 
-    IMAGE_PATH = "../../../images/horse.jpg"
-
-    torch.cuda.empty_cache()
-
-    model = GroundedSam2(caption)
+    IMAGE_PATH = "images/buildings.jpg"
 
     torch.cuda.empty_cache()
 
-    bbox, categories, confidence = model(cv2.imread(IMAGE_PATH))
+    model = GroundedSam2(caption, "Grounding DINO")
+
+    #torch.cuda.empty_cache()
+
+    #bbox, categories, confidence = model(cv2.imread(IMAGE_PATH))
+
+    image = Image.open(IMAGE_PATH)
+    image = np.array(image.convert("RGB"))
+
+    # plt.figure(figsize=(20, 20))
+    # plt.imshow(image)
+    # plt.axis('off')
+    # plt.show()
+
+    model.automatic_mask_generation(image)
     # print(bbox)
     # print(categories)
     # print(confidence)

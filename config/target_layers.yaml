@@ -1,5 +1,6 @@
 # please note that the pretrained model name follows the capitalization of the model name available at https://pytorch.org/vision/stable/models.html#table-of-all-available-classification-weights
 target_layers:
+  ResNet50: model.0.layer4.1.conv2
   ResNet18: model.0.layer4.1.conv2
   VGG11: model.0.features.20
 
