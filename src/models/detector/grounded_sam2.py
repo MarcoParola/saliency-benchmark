@@ -17,11 +17,12 @@ from sam2.build_sam import build_sam2
 from segment_anything import sam_model_registry
 from supervision.draw.color import ColorPalette
 from segment_anything.automatic_mask_generator import SamAutomaticMaskGenerator
+from torchvision.transforms import ToPILImage
 
-
+from src.datasets.detection import load_detection_dataset
 from src.utils import save_annotated_images
 
-OUTPUT_DIR = "../../../images"
+OUTPUT_DIR = "output"
 
 import requests
 
@@ -84,6 +85,36 @@ def save_annotated_images_grounded(model, image, results):
     cv2.imwrite(os.path.join(OUTPUT_DIR, "grounded_sam2_annotated_image_with_mask.jpg"), annotated_frame)
     # label all images in a folder called `context_images`
     #model.label("../../../images", extension=".jpeg")
+
+def save_images_with_mask(input_boxes, masks, class_ids, img,model, idx):
+    img = np.array(img)
+    detections = sv.Detections(
+        xyxy=input_boxes,  # (n, 4)
+        mask=masks.astype(bool),  # (n, h, w)
+        class_id=class_ids
+    )
+
+    box_annotator = sv.BoxAnnotator()
+    annotated_frame = box_annotator.annotate(scene=img.copy(), detections=detections)
+
+    label_annotator = sv.LabelAnnotator()
+    annotated_frame = label_annotator.annotate(scene=annotated_frame, detections=detections,
+                                               labels=retrieve_labels(model.ontology.classes(), detections.class_id))
+
+    mask_annotator = sv.MaskAnnotator()
+    annotated_frame = mask_annotator.annotate(scene=annotated_frame, detections=detections)
+    cv2.imwrite(os.path.join(OUTPUT_DIR, "grounded_sam2_annotated_image_with_mask"+str(idx)+".jpg"), annotated_frame)
+
+def save_automatic_generated_mask(masks, image):
+    print(masks)
+    print(len(masks))
+    print(masks[0].keys())
+    plt.figure(figsize=(20, 20))
+    plt.imshow(image)
+    show_anns(masks)
+    plt.axis('off')
+    plt.savefig(os.path.join(OUTPUT_DIR, "grounded_sam2_annotated_image_with_mask"+str(idx)+".jpg"))
+    plt.close()
 
 
 def show_anns(anns):
@@ -158,6 +189,19 @@ class GroundedSam2(nn.Module):
 
         return bbox, categories, confidence_score
 
+    def mask_generation(self, image):
+        with torch.no_grad():
+            with torch.cuda.amp.autocast():
+                results = self.model.predict(image)
+
+        boxes = results.xyxy
+
+        masks = results.mask
+
+        classes = results.class_id
+
+        return boxes, masks, classes
+
 
     def automatic_mask_generation(self, image):
 
@@ -167,64 +211,77 @@ class GroundedSam2(nn.Module):
         else:
             device = torch.device("cpu")
 
-        #USANDO REPO SAM2
-
         sam2_checkpoint = "~/.cache/autodistill/segment_anything_2/sam2_hiera_large.pt"
         checkpoint = os.path.expanduser(sam2_checkpoint)
         model_cfg = "sam2_hiera_l.yaml"
         
         sam2 = build_sam2(model_cfg, checkpoint, device=device, apply_postprocessing=False)
-        print(self.model.sam_2_predictor.model)
-        mask_generator = SAM2AutomaticMaskGenerator(model=sam2)
-
-        #USANDO REPO SAM_ANYTHING
-
-        # sam_checkpoint = "sam_vit_h_4b8939.pth"
-        # model_type = "vit_h"
-        #
-        # device = "cuda"
-        #
-        # sam = sam_model_registry[model_type](checkpoint=sam_checkpoint)
-        # sam.to(device=device)
-        #
-        # mask_generator = SamAutomaticMaskGenerator(sam)
-        #mask_generator = SamAutomaticMaskGenerator(self.model.sam_2_predictor.model)
-        #print(mask_generator)
+        mask_generator = SAM2AutomaticMaskGenerator(model=sam2, pred_iou_thresh=0.75, stability_score_thresh=0.9, crop_nms_thresh=0.8)
 
         masks = mask_generator.generate(image)
-        print(masks)
-        print(len(masks))
-        print(masks[0].keys())
-        plt.figure(figsize=(20, 20))
-        plt.imshow(image)
-        show_anns(masks)
-        plt.axis('off')
-        plt.show()
+        return masks
+        # print(masks)
+        # print(len(masks))
+        # print(masks[0].keys())
+        # plt.figure(figsize=(20, 20))
+        # plt.imshow(image)
+        # show_anns(masks)
+        # plt.axis('off')
+        # plt.show()
 
 
 
 if __name__ == '__main__':
-    caption = "cat/chicken/cow/dog/fox/goat/horse/person/racoon/skunk"
+    #caption = "muzzle/ears/body/paws"
+    caption = " "
 
-    IMAGE_PATH = "images/buildings.jpg"
+    #IMAGE_PATH = "images/flower.jpg"
+
+    dataset = load_detection_dataset("pascal_voc")
 
     torch.cuda.empty_cache()
 
     model = GroundedSam2(caption, "Grounding DINO")
 
-    #torch.cuda.empty_cache()
+    # Mostra il path assoluto del file
+    absolute_path = os.path.abspath(OUTPUT_DIR)
+    print(f"Il file è stato salvato in: {absolute_path}")
 
-    #bbox, categories, confidence = model(cv2.imread(IMAGE_PATH))
+    for idx in range(20):
+        print("IMG " + str(idx))
+        # Get the ground truth bounding boxes and labels
+        image, ground_truth_boxes, ground_truth_labels = dataset.__getitem__(idx)
 
-    image = Image.open(IMAGE_PATH)
-    image = np.array(image.convert("RGB"))
+        image = ToPILImage()(image)
 
-    # plt.figure(figsize=(20, 20))
-    # plt.imshow(image)
-    # plt.axis('off')
-    # plt.show()
+        if caption == " ":
+            image = np.array(image)
+            masks = model.automatic_mask_generation(image)
+            save_automatic_generated_mask(masks,image)
+        else:
 
-    model.automatic_mask_generation(image)
-    # print(bbox)
-    # print(categories)
-    # print(confidence)
+            # Predict using the model
+            boxes, masks, classes = model.mask_generation(image)
+
+            print(masks)
+            if len(masks) > 0:
+                save_images_with_mask(boxes,masks,classes,image,model,idx)
+
+
+
+
+
+    # #bbox, categories, confidence = model(cv2.imread(IMAGE_PATH))
+    #
+    # image = Image.open(IMAGE_PATH)
+    # image = np.array(image.convert("RGB"))
+    #
+    # # plt.figure(figsize=(20, 20))
+    # # plt.imshow(image)
+    # # plt.axis('off')
+    # # plt.show()
+    #
+    # model.automatic_mask_generation(image)
+    # # print(bbox)
+    # # print(categories)
+    # # print(confidence)
