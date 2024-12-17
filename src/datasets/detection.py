@@ -28,7 +28,7 @@ def load_detection_dataset(dataset_name, resize=128):
 
     if dataset_name == 'francesco_animals':
         ds = load_dataset("Francesco/animals-ij5d2", split="test")  # load the test set
-        dataset = AnimalDetectionDataset(ds)
+        dataset = AnimalDetectionDataset(ds, transform)
 
     if dataset_name == 'coco2017':
         ds = load_dataset("rafaelpadilla/coco2017", split="val")
@@ -92,7 +92,7 @@ class DetectionDataset(torch.utils.data.Dataset):
 
 class AnimalDetectionDataset(DetectionDataset):
     def __init__(self, orig_dataset, transform=None):
-        super().__init__(orig_dataset)
+        super().__init__(orig_dataset, transform)
         self.classes = orig_dataset.info.features.to_dict()['objects']['feature']['category']['names'][1:11]
         self.name_for_category = 'category'
 

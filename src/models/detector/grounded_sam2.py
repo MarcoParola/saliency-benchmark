@@ -202,12 +202,12 @@ def plot_grid_masks(image, masks, classes, idx):
     cmap = ListedColormap(['none', 'red'])  # Transparent and Red
 
     # Create a grid of subplots
-    rows, cols = 8, 8  # Adjust based on your desired layout
+    rows, cols = 6, 6  # Adjust based on your desired layout
     fig, axes = plt.subplots(rows, cols, figsize=(20, 20))
     axes = axes.flatten()
 
     # Loop through each class and plot
-    for i in range(58):
+    for i in range(len(classes)):
         # Overlay the mask onto the image
         #masked_image = image.copy()
         mask = masks[i]
@@ -360,12 +360,9 @@ class GroundedSam2(nn.Module):
 
 
 if __name__ == '__main__':
-    caption = ("Airplane Wings/Cockpit windows/Engines/Runway/Clouds/Control tower/Headlights/Grille/Side "
-               "mirrors/Wheels/Road/Traffic signs/Parking lot/Beak/Bird wings/Feather tail/Tree "
-               "branches/Nest/Sky/Ears/Eyes/Tail/Whiskers/Sofa/Food bowl/Scratching post/Antlers/Short tail/Spotted "
-               "fur/Forest/Grass/River/Collar/Tongue/Floppy ears/Leash/Park/Webbed feet/Warty "
-               "skin/Pond/Rocks/Mane/Muzzle/Hooves/Fence/Saddle/Anchor/Flag/Hull/Sails/Sea/waves/Dock/Large "
-               "wheels/Exhaust pipes/Cargo bed/Highway/Gas station")  #58 concepts
+    caption = ("Airplane wings/Cockpit windows/Engines/Headlights/Grille/Side mirrors/wheels/Beak/Bird wings/Feather "
+               "tail/Ears/Eyes/Tail/Whiskers/Antlers/Short tail/Spotted fur/Collar/Tongue/Floppy ears/Webbed "
+               "feet/Warty skin/Mane/Muzzle/Hooves/Anchor/Flag/Hull/Sails/Large wheels/Exhaust pipes/Cargo bed/Park/Sky")  #34 concepts
     #caption = " "
 
     #IMAGE_PATH = "images/flower.jpg"
@@ -384,7 +381,7 @@ if __name__ == '__main__':
     absolute_path = os.path.abspath(OUTPUT_DIR)
     print(f"Il file è stato salvato in: {absolute_path}")
 
-    for idx in range(50,200):
+    for idx in range(200):
         print("IMG " + str(idx))
         # Get the ground truth bounding boxes and labels
         image, ground_truth_labels = dataset.__getitem__(idx)
