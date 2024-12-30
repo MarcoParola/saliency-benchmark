@@ -66,8 +66,7 @@ def main(cfg):
     # Load test dataset
     data_dir = os.path.join(cfg.mainDir, cfg.dataset.path)
     train, val, test = load_classification_dataset(cfg.dataset.name, data_dir, cfg.dataset.resize)
-    dataset = ClassificationDataset(test)
-    dataloader = data.DataLoader(dataset, batch_size=cfg.train.batch_size, shuffle=True)
+    dataloader = data.DataLoader(test, batch_size=cfg.train.batch_size, shuffle=True)
 
     # Flag to determine whether to save or show images
     save_images = cfg.visualize.save_images
@@ -75,8 +74,10 @@ def main(cfg):
     if save_images:
         # Create directory to save saliency maps
         finetune = "finetuned_" if cfg.train.finetune else "no_finetuned_"
-        output_dir = os.path.join(cfg.mainDir, 'gradCam_saliency_maps', finetune + cfg.model + cfg.dataset.name)
-        os.makedirs(output_dir, exist_ok=True)
+        output_dir_images = os.path.join(cfg.mainDir, 'saliency_output/gradCam_saliency_maps_images', finetune + cfg.model + cfg.dataset.name)
+        output_dir_tensors = os.path.join(cfg.mainDir, 'saliency_output/gradCam_saliency_maps_tensors', finetune + cfg.model + cfg.dataset.name)
+        os.makedirs(output_dir_images, exist_ok=True)
+        os.makedirs(output_dir_tensors, exist_ok=True)
 
     # Initialize the Saliency method
     target_layers_name = cfg.target_layers[cfg.model.split('_Weights')[0]]
@@ -85,8 +86,8 @@ def main(cfg):
     image_count = 0
 
     for images, labels in dataloader:
-        if image_count >= 2:
-            break
+        # if image_count >= 5:
+        #     break
 
         images = images.to(device)
 
@@ -97,9 +98,9 @@ def main(cfg):
         # Generate saliency maps
         saliency_maps = method.generate_saliency(input_images=images, target_layer=target_layers_name)
 
-        for i in range(images.size(0)):
-            if image_count >= 2:
-                break
+        for i in range(images.size(0)): #i-th images of the batch
+            # if image_count >= 5:
+            #     break
 
             image = images[i]
             image = image.cpu()
@@ -117,8 +118,9 @@ def main(cfg):
             ax[1].set_title(f'Pred: {predicted_class}\nTrue: {true_class}')
 
             if save_images:
-                output_path = os.path.join(output_dir, f'saliency_map_{image_count}.png')
-                plt.savefig(output_path)
+                #output_path = os.path.join(output_dir_images, f'saliency_map_{image_count}.png')
+                #plt.savefig(output_path)
+                save_saliency_map(os.path.join(output_dir_tensors, f'saliency_map_{image_count}.pth'), saliency)
             else:
                 plt.show()
 
@@ -129,3 +131,12 @@ def main(cfg):
 
 if __name__ == '__main__':
     main()
+    # print("Riprova")
+    # directory_path = 'C:/Users/matte/GitHub/saliency-benchmark/saliency_output/gradCam_saliency_maps_tensors/finetuned_ResNet50_Weights.IMAGENET1K_V1cifar10'
+    # for filename in os.listdir(directory_path):
+    #     file_path = os.path.join(directory_path, filename)
+    #     if os.path.isfile(file_path):
+    #         print(file_path)
+    #         saliency_map = load_saliency_map(file_path)
+    #         print(saliency_map.shape)
+    #         print(saliency_map)

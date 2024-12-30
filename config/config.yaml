@@ -8,22 +8,22 @@ currentDir: ${hydra:runtime.cwd}
 mainDir: C:\Users\matte\Github\saliency-benchmark
 
 modelDet: GroundedSam2
-modelSam: GroundingDino
+modelSam: Florence2
 
 datasetDet:
-  name: pascal_voc
+  name: coco2017
 
-model: ResNet50_Weights.IMAGENET1K_V1
+model: VGG11_Weights.IMAGENET1K_V1
 seed: 42
-checkpoint: checkpoints\finetuned_VGG11_Weights.IMAGENET1K_V1oxford-iiit-pet\model-epoch=69-val_loss=3.09.ckpt\finetuned_ResNet50_Weights.IMAGENET1K_V1cifar10\model-epoch=12-val_loss=1.51.ckpt
+checkpoint: checkpoints\finetuned_VGG11_Weights.IMAGENET1K_V1imagenette\model-epoch=19-val_loss=1.52.ckpt
 
 dataset: 
-  name: cifar10
+  name: imagenette
   path: ./data
   resize: 224
 
 visualize:
-  save_images: false
+  save_images: true
 
 saliency:
   method: gradcam
@@ -52,7 +52,7 @@ log:
 
 wandb:
   project: saliency-benchmark
-  entity: l-cocchella1
+  entity: m-razz
 
 
 

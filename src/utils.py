@@ -8,6 +8,7 @@ import numpy as np
 import os
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks import ModelCheckpoint
+from sklearn.utils import shuffle
 from supervision import ColorPalette
 from torch import tensor
 from torchvision import transforms
@@ -303,6 +304,12 @@ def load_saliecy_method(method, model, device='cpu', **kwargs):
         return lime_interface(model, device=device, **kwargs)
     else:
         raise ValueError(f'Unknown saliency method: {method}')
+
+def save_saliency_map(save_path, saliency_map):
+    torch.save(saliency_map,save_path)
+
+def load_saliency_map(input_path):
+    return torch.load(input_path)
 
 
 if __name__ == "__main__":
