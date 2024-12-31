@@ -24,3 +24,9 @@ mnist:
 
 fashionmnist:
   n_classes: 10
+
+imagenette:
+  n_classes: 10
+
+intel_image:
+  n_classes: 6

@@ -24,7 +24,7 @@ def main(cfg):
     callbacks = list()
     callbacks.append(get_early_stopping(cfg.train.patience))
     finetune = "finetuned_" if cfg.train.finetune else "no_finetuned_"
-    model_save_dir = os.path.join(cfg.currentDir, cfg.checkpoint, finetune + cfg.model + cfg.dataset.name )
+    model_save_dir = os.path.join(cfg.currentDir, "checkpoints", finetune + cfg.model + cfg.dataset.name)
     callbacks.append(get_save_model_callback(model_save_dir))
 
 
@@ -34,9 +34,9 @@ def main(cfg):
     # Load dataset
     data_dir = os.path.join(cfg.currentDir, cfg.dataset.path)
     train, val, test = load_classification_dataset(cfg.dataset.name, data_dir, cfg.dataset.resize)
-    train = ClassificationDataset(train)
-    val = ClassificationDataset(val)
-    test = ClassificationDataset(test)
+    # train = ClassificationDataset(train)
+    # val = ClassificationDataset(val)
+    # test = ClassificationDataset(test)
     train_loader = torch.utils.data.DataLoader(train,
         batch_size=cfg.train.batch_size,
         shuffle=True,

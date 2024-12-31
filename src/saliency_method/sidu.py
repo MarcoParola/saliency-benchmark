@@ -53,8 +53,12 @@ def main(cfg):
     if save_images:
         # Create directory to save saliency maps
         finetune = "finetuned_" if cfg.train.finetune else "no_finetuned_"
-        output_dir = os.path.join(cfg.mainDir, 'SIDU_saliency_maps', finetune + cfg.model + cfg.dataset.name)
-        os.makedirs(output_dir, exist_ok=True)
+        output_dir_images = os.path.join(cfg.mainDir, 'saliency_output/SIDU_saliency_maps_images',
+                                         finetune + cfg.model + cfg.dataset.name)
+        output_dir_tensors = os.path.join(cfg.mainDir, 'saliency_output/SIDU_saliency_maps_tensors',
+                                          finetune + cfg.model + cfg.dataset.name)
+        os.makedirs(output_dir_images, exist_ok=True)
+        os.makedirs(output_dir_tensors, exist_ok=True)
 
     # Initialize the Saliency method
     target_layer = cfg.target_layers[cfg.model.split('_Weights')[0]]
@@ -63,7 +67,7 @@ def main(cfg):
     image_count = 0
 
     for images, labels in dataloader:
-        if image_count >= 2:
+        if image_count >= 5:
             break
 
         images = images.to(device)
@@ -76,7 +80,7 @@ def main(cfg):
         saliency_maps = method.generate_saliency(images, target_layer=target_layer)
 
         for i in range(images.size(0)):
-            if image_count >= 2:
+            if image_count >= 5:
                 break
 
             image = images[i].cpu()
@@ -94,8 +98,9 @@ def main(cfg):
             ax[1].set_title(f'Pred: {predicted_class}\nTrue: {true_class}')
 
             if save_images:
-                output_path = os.path.join(output_dir, f'saliency_map_{image_count}.png')
+                output_path = os.path.join(output_dir_images, f'saliency_map_{image_count}.png')
                 plt.savefig(output_path)
+                save_saliency_map(os.path.join(output_dir_tensors, f'saliency_map_{image_count}.pth'), saliency)
             else:
                 plt.show()
 

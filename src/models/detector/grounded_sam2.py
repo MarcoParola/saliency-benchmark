@@ -199,10 +199,10 @@ def plot_grid_masks(image, masks, classes, idx):
     # masks = np.random.randint(0, 2, (58, image.shape[0], image.shape[1]))  # Example masks
 
     # Define a colormap for the masks
-    cmap = ListedColormap(['none', 'red'])  # Transparent and Red
+    cmap = ListedColormap(['none', 'blue'])  # Transparent and Red
 
     # Create a grid of subplots
-    rows, cols = 6, 6  # Adjust based on your desired layout
+    rows, cols = 4, 4  # Adjust based on your desired layout
     fig, axes = plt.subplots(rows, cols, figsize=(20, 20))
     axes = axes.flatten()
 
@@ -324,7 +324,7 @@ class GroundedSam2(nn.Module):
 
         confidence_score = results.confidence
 
-        keep_indices = torch.ops.torchvision.nms(torch.tensor(boxes), torch.tensor(confidence_score), iou_threshold=0.9)
+        keep_indices = torch.ops.torchvision.nms(torch.tensor(boxes), torch.tensor(confidence_score), iou_threshold=0.8)
         # print(keep_indices)
 
         boxes = boxes[keep_indices]
@@ -360,18 +360,17 @@ class GroundedSam2(nn.Module):
 
 
 if __name__ == '__main__':
-    caption = ("Airplane wings/Cockpit windows/Engines/Headlights/Grille/Side mirrors/wheels/Beak/Bird wings/Feather "
-               "tail/Ears/Eyes/Tail/Whiskers/Antlers/Short tail/Spotted fur/Collar/Tongue/Floppy ears/Webbed "
-               "feet/Warty skin/Mane/Muzzle/Hooves/Anchor/Flag/Hull/Sails/Large wheels/Exhaust pipes/Cargo bed/Park/Sky")  #34 concepts
-    #caption = " "
+    # caption = ("Fin/Mouth/Ears/Muzzle/Paws/Tail/Body/cassette deck/button/speaker/Handle/Bar"
+    #            "/Window/Tower/Façade/Cross/Bell/Barrel/Cab/Wheel/Hose/Nozzle/Tank/Logo/Cord/Canopy")  #26 concepts for Imagenette
+    caption = "Wall/window/roof/Tree/Vegetation/Rocks/Ice Sheet/Cliff/Wave/Sun/Beach/Sidewalk/Streetlights/Sky" #16 concepts for Intel_Image
 
     #IMAGE_PATH = "images/flower.jpg"
 
     resize = 224
 
-    train, val, test = load_classification_dataset("cifar10", "data", resize)
+    train, val, test = load_classification_dataset("intel_image", "data", resize)
 
-    dataset = ClassificationDataset(test)
+    dataset = test
 
     torch.cuda.empty_cache()
 
@@ -381,7 +380,7 @@ if __name__ == '__main__':
     absolute_path = os.path.abspath(OUTPUT_DIR)
     print(f"Il file è stato salvato in: {absolute_path}")
 
-    for idx in range(200):
+    for idx in range(50):
         print("IMG " + str(idx))
         # Get the ground truth bounding boxes and labels
         image, ground_truth_labels = dataset.__getitem__(idx)
@@ -401,7 +400,7 @@ if __name__ == '__main__':
 
             if len(masks) > 0:
                 #save_images_with_mask(boxes,masks,classes,image,model,idx) #usable in case of printing only present class mask
-                save_images_with_mask_for_all_concepts(image, masks, model, boxes)  #to print all the class masks, even if not present
+                #save_images_with_mask_for_all_concepts(image, masks, model, boxes)  #to print all the class masks, even if not present
                 plot_grid_masks(image,masks,model.ontology.classes(),idx)
 
     # #bbox, categories, confidence = model(cv2.imread(IMAGE_PATH))
