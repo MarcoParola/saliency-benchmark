@@ -33,6 +33,9 @@ class ClassifierModule(LightningModule):
         self.preprocess = weights.transforms()
         self.loss = torch.nn.CrossEntropyLoss()
 
+        self.all_predictions = []
+        self.all_labels = []
+
     def forward(self, x):
         return self.model(x)
 
@@ -51,6 +54,11 @@ class ClassifierModule(LightningModule):
         x = self.preprocess(imgs)
         y_hat = self(x)
         predictions = torch.argmax(y_hat, dim=1)
+
+        # Save prediction and true labels
+        self.all_predictions.append(predictions.cpu().numpy())
+        self.all_labels.append(labels.cpu().numpy())
+
         # compute metrics
         accuracy = accuracy_score(labels.cpu().numpy(), predictions.cpu().numpy())
         recall = recall_score(labels.cpu().numpy(), predictions.cpu().numpy(), average='macro')

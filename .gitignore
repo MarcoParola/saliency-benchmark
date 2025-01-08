@@ -173,3 +173,9 @@ wandb/
 *.log
 *.pth
 *.png
+
+.idea/
+images/
+images_labeled/
+.idea
+confusion_matrices

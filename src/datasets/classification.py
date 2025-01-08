@@ -3,6 +3,7 @@ import torch
 import numpy as np
 import os
 
+from PIL import Image
 from datasets import load_dataset
 from matplotlib import pyplot as plt
 from sklearn.utils import shuffle
@@ -10,6 +11,8 @@ from torchvision import transforms
 import torchvision
 import kagglehub
 import datasets
+import json
+
 
 def get_images_intel_images(directory):
     dataset = []
@@ -35,11 +38,11 @@ def get_images_intel_images(directory):
                 directory + labels):  # Extracting the file name of the image from Class Label folder
             image = cv2.imread(directory + labels + r'/' + image_file)  # Reading the image (OpenCV)
             image = cv2.resize(image, (
-            150, 150))  # Resize the image, Some images are different sizes. (Resizing is very Important)
-            dataset.append({"image":image, "label":label})
+                150, 150))  # Resize the image, Some images are different sizes. (Resizing is very Important)
+            dataset.append({"image": image, "label": label})
 
     #     return Images, Labels
-    return shuffle(dataset, random_state=42)
+    return shuffle(dataset, random_state=42), ['buildings', 'forest', 'glacier', 'mountain', 'sea', 'street']
 
 
 def get_classlabel_intel_images(class_code):
@@ -181,35 +184,38 @@ def load_classification_dataset(dataset, data_dir, resize=256, val_split=0.2, te
         train, val = torch.utils.data.random_split(train, [len(train) - split, split])
 
     elif dataset == 'imagenette':
-        train = load_dataset('frgfm/imagenette','full_size', split='train')
+        train = load_dataset('frgfm/imagenette', 'full_size', split='train')
+        classes = train.info.features.to_dict()['label']['names']
         test = load_dataset('frgfm/imagenette', 'full_size', split='validation')
         train = train.shuffle(seed=42)
         test = test.shuffle(seed=42)
         split = int(len(train) * val_split)
         train, val = torch.utils.data.random_split(train, [len(train) - split, split])
-        train = IntelImagenetteDataset(train,transform)
-        test = IntelImagenetteDataset(test,transform)
-        val = IntelImagenetteDataset(val,transform)
+        train = IntelImagenetteDataset(train, classes, transform)
+        test = IntelImagenetteDataset(test, classes, transform)
+        val = IntelImagenetteDataset(val, classes, transform)
 
     elif dataset == 'intel_image':
         # Download latest version
         path = kagglehub.dataset_download("puneet6060/intel-image-classification")
 
-        print(path)
-
-        train_path = os.path.join(path,"seg_train/seg_train/")
+        train_path = os.path.join(path, "seg_train/seg_train/")
         pred_path = os.path.join(path, "seg_pred")
         test_path = os.path.join(path, "seg_test/seg_test/")
 
-        train = get_images_intel_images(train_path)
+        train, classes = get_images_intel_images(train_path)
         split = int(len(train) * val_split)
         train, val = torch.utils.data.random_split(train, [len(train) - split, split])
-        test = get_images_intel_images(test_path)
+        test, classes = get_images_intel_images(test_path)
 
-        train = IntelImagenetteDataset(train, transform)
-        val = IntelImagenetteDataset(val, transform)
-        test = IntelImagenetteDataset(test, transform)
+        train = IntelImagenetteDataset(train, classes, transform)
+        val = IntelImagenetteDataset(val, classes, transform)
+        test = IntelImagenetteDataset(test, classes, transform)
 
+    elif dataset == 'oral':
+        train = OralClassificationDataset("data/oral/train.json", transform)
+        val = OralClassificationDataset("data/oral/val.json", transform)
+        test = OralClassificationDataset("data/oral/test.json", transform)
 
     else:
         raise ValueError(f'Unknown dataset: {dataset}')
@@ -236,10 +242,12 @@ class ClassificationDataset(torch.utils.data.Dataset):
 
         return img, lbl
 
+
 class IntelImagenetteDataset(torch.utils.data.Dataset):
-    def __init__(self, orig_dataset, transform=None):
+    def __init__(self, orig_dataset, classes, transform=None):
         self.orig_dataset = orig_dataset
         self.transform = transform
+        self.classes = classes
 
     def __len__(self):
         return self.orig_dataset.__len__()
@@ -262,9 +270,42 @@ class IntelImagenetteDataset(torch.utils.data.Dataset):
         return image, lbl
 
 
-if __name__ == "__main__":
+class OralClassificationDataset(torch.utils.data.Dataset):
+    def __init__(self, annonations, transform=None):
+        self.annonations = annonations
+        self.transform = transform
 
+        with open(annonations, "r") as f:
+            self.dataset = json.load(f)
+
+        self.images = dict()
+        for image in self.dataset["images"]:
+            self.images[image["id"]] = image
+
+        self.categories = dict()
+        for i, category in enumerate(self.dataset["categories"]):
+            self.categories[category["id"]] = i
+
+    def __len__(self):
+        return len(self.dataset["annotations"])
+
+    def __getitem__(self, idx):
+        annotation = self.dataset["annotations"][idx]
+        image = self.images[annotation["image_id"]]
+        image_path = os.path.join(os.path.dirname(self.annonations), "oral1","oral1", image["file_name"])
+        image = Image.open(image_path).convert("RGB")
+
+        if self.transform:
+            image = self.transform(image)
+
+        category = self.categories[annotation["category_id"]]
+
+        return image, category
+
+
+if __name__ == "__main__":
     train, val, test = load_classification_dataset('intel_image', 'data', 224)
+    print(test.classes)
     print(len(train))
     print(len(val))
     print(len(test))
@@ -295,5 +336,5 @@ if __name__ == "__main__":
     plt.axis('off')  # Turn off axis labels
     plt.show()
     # print max and min values
-    print(torch.max(image), torch.min(image))
-    print(image.shape, label)
+    # print(torch.max(image), torch.min(image))
+    # print(image.shape, label)

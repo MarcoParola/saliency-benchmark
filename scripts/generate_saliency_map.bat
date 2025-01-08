@@ -1,0 +1,14 @@
+python -m src.saliency_method.gradcam dataset.name=imagenette model=ResNet18_Weights.IMAGENET1K_V1 checkpoint=checkpoints/finetuned_ResNet18_Weights.IMAGENET1K_V1imagenette/model-epoch\=19-val_loss\=1.50.ckpt
+python -m src.saliency_method.lime_method dataset.name=imagenette model=ResNet18_Weights.IMAGENET1K_V1 checkpoint=checkpoints/finetuned_ResNet18_Weights.IMAGENET1K_V1imagenette/model-epoch\=19-val_loss\=1.50.ckpt
+python -m src.saliency_method.rise dataset.name=imagenette model=ResNet18_Weights.IMAGENET1K_V1 checkpoint=checkpoints/finetuned_ResNet18_Weights.IMAGENET1K_V1imagenette/model-epoch\=19-val_loss\=1.50.ckpt
+python -m src.saliency_method.sidu dataset.name=imagenette model=ResNet18_Weights.IMAGENET1K_V1 checkpoint=checkpoints/finetuned_ResNet18_Weights.IMAGENET1K_V1imagenette/model-epoch\=19-val_loss\=1.50.ckpt
+python -m src.saliency_method.lime_method dataset.name=intel_image model=ResNet18_Weights.IMAGENET1K_V1 checkpoint=checkpoints/finetuned_ResNet18_Weights.IMAGENET1K_V1intel_image/model-epoch\=18-val_loss\=1.11.ckpt
+python -m src.saliency_method.rise dataset.name=intel_image model=ResNet18_Weights.IMAGENET1K_V1 checkpoint=checkpoints/finetuned_ResNet18_Weights.IMAGENET1K_V1intel_image/model-epoch\=18-val_loss\=1.11.ckpt
+python -m src.saliency_method.sidu dataset.name=intel_image model=ResNet18_Weights.IMAGENET1K_V1 checkpoint=checkpoints/finetuned_ResNet18_Weights.IMAGENET1K_V1intel_image/model-epoch\=18-val_loss\=1.11.ckpt
+python -m src.saliency_method.lime_method dataset.name=imagenette model=VGG11_Weights.IMAGENET1K_V1 checkpoint=checkpoints/finetuned_VGG11_Weights.IMAGENET1K_V1imagenette/model-epoch\=19-val_loss\=1.52.ckpt
+python -m src.saliency_method.rise dataset.name=imagenette model=VGG11_Weights.IMAGENET1K_V1 checkpoint=checkpoints/finetuned_VGG11_Weights.IMAGENET1K_V1imagenette/model-epoch\=19-val_loss\=1.52.ckpt
+python -m src.saliency_method.sidu dataset.name=imagenette model=VGG11_Weights.IMAGENET1K_V1 checkpoint=checkpoints/finetuned_VGG11_Weights.IMAGENET1K_V1imagenette/model-epoch\=19-val_loss\=1.52.ckpt
+python -m src.saliency_method.gradcam dataset.name=intel_image model=VGG11_Weights.IMAGENET1K_V1 checkpoint=checkpoints/finetuned_VGG11_Weights.IMAGENET1K_V1intel_image/model-epoch\=13-val_loss\=1.12.ckpt
+python -m src.saliency_method.lime_method dataset.name=intel_image model=VGG11_Weights.IMAGENET1K_V1 checkpoint=checkpoints/finetuned_VGG11_Weights.IMAGENET1K_V1intel_image/model-epoch\=13-val_loss\=1.12.ckpt
+python -m src.saliency_method.rise dataset.name=intel_image model=VGG11_Weights.IMAGENET1K_V1 checkpoint=checkpoints/finetuned_VGG11_Weights.IMAGENET1K_V1intel_image/model-epoch\=13-val_loss\=1.12.ckpt
+python -m src.saliency_method.sidu dataset.name=intel_image model=VGG11_Weights.IMAGENET1K_V1 checkpoint=checkpoints/finetuned_VGG11_Weights.IMAGENET1K_V1intel_image/model-epoch\=13-val_loss\=1.12.ckpt

@@ -24,6 +24,10 @@ class sidu_interface:
 # main for testing the interface of sidu made for this project
 @hydra.main(config_path='../../config', config_name='config', version_base=None)
 def main(cfg):
+    print("SIDU")
+    print(cfg.model)
+    print(cfg.dataset.name)
+
     # Load the model and data
     model = ClassifierModule(
         weights=cfg.model,
@@ -67,8 +71,8 @@ def main(cfg):
     image_count = 0
 
     for images, labels in dataloader:
-        if image_count >= 5:
-            break
+        # if image_count >= 5:
+        #     break
 
         images = images.to(device)
 
@@ -80,8 +84,9 @@ def main(cfg):
         saliency_maps = method.generate_saliency(images, target_layer=target_layer)
 
         for i in range(images.size(0)):
-            if image_count >= 5:
-                break
+            # if image_count >= 5:
+            #     break
+            print(image_count)
 
             image = images[i].cpu()
             saliency = saliency_maps[i].cpu()
@@ -98,8 +103,9 @@ def main(cfg):
             ax[1].set_title(f'Pred: {predicted_class}\nTrue: {true_class}')
 
             if save_images:
-                output_path = os.path.join(output_dir_images, f'saliency_map_{image_count}.png')
-                plt.savefig(output_path)
+                if image_count <= 200:
+                    output_path = os.path.join(output_dir_images, f'saliency_map_{image_count}.png')
+                    plt.savefig(output_path)
                 save_saliency_map(os.path.join(output_dir_tensors, f'saliency_map_{image_count}.pth'), saliency)
             else:
                 plt.show()
