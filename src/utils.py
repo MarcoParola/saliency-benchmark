@@ -306,11 +306,18 @@ def load_saliecy_method(method, model, device='cpu', **kwargs):
         raise ValueError(f'Unknown saliency method: {method}')
 
 def save_saliency_map(save_path, saliency_map):
-    torch.save(saliency_map,save_path)
+    torch.save(saliency_map.to(torch.float16),save_path) # took to float16 to consume less memory
 
 def load_saliency_map(input_path):
-    return torch.load(input_path)
+    saliency = torch.load(input_path)
+    return saliency.to(torch.float32) # took back to float32
 
+def save_mask(save_path, mask):
+    torch.save(torch.from_numpy(mask), save_path)
+
+def load_mask(input_path):
+    tensor_loaded = torch.load(input_path)
+    return tensor_loaded.to(torch.float32)
 
 if __name__ == "__main__":
 

@@ -1,7 +1,9 @@
 import json
+import math
 import os
 import random
 
+import numpy
 import numpy as np
 import torch.nn as nn
 import torch
@@ -21,9 +23,8 @@ from torchvision.transforms import ToPILImage
 
 from src.datasets.classification import load_classification_dataset, ClassificationDataset
 from src.datasets.detection import load_detection_dataset
-from src.utils import save_annotated_images
+from src.utils import save_annotated_images, save_mask
 from matplotlib.colors import ListedColormap
-
 
 OUTPUT_DIR = "output"
 
@@ -114,7 +115,7 @@ def save_images_with_mask(input_boxes, masks, class_ids, img, model, idx):
     cv2.imwrite(os.path.join(OUTPUT_DIR, "grounded_sam2_annotated_image_with_mask" + str(idx) + ".jpg"), image_rgb)
 
 
-def save_automatic_generated_mask(masks, image):
+def save_automatic_generated_mask(masks, image, idx):
     print(masks)
     print(len(masks))
     print(masks[0].keys())
@@ -142,41 +143,34 @@ def show_anns(anns):
     ax.imshow(img)
 
 
-def generate_mask_for_all_concepts(classes, masks, boxes):
-    dict_mask = dict(zip(classes, masks))
-    dict_boxes = dict(zip(classes, boxes))
+def generate_mask_for_all_concepts(model,classes, masks, boxes, resize):
 
-    for _, mask in dict_mask.items():
-        print(mask.shape)
+    if len(masks)>0:
+        for i in range(len(model.ontology.classes())):
+            if i not in classes:
+                masks = np.append(masks, np.expand_dims(np.full((resize, resize), False, dtype=bool), axis=0), axis=0)
+                boxes = np.append(boxes, np.expand_dims([0, 0, 0, 0], axis=0), axis=0)
+                classes = np.append(classes, i)
+    else:
+        masks = np.expand_dims(np.full((resize, resize), False, dtype=bool), axis=0)
+        masks = np.repeat(masks, len(model.ontology.classes()), axis=0)
+        boxes = np.expand_dims([0, 0, 0, 0], axis=0)
+        boxes = np.repeat(boxes, len(model.ontology.classes()), axis=0)
+        classes = np.arange(len(model.ontology.classes()))
 
-    for i in range(len(model.ontology.classes())):
-        if i not in classes:
-            dict_mask.update({i: np.full((resize, resize), False, dtype=bool)})
-            dict_boxes.update({i: [0, 0, 0, 0]})
+    masks = np.stack(masks)
+    boxes = np.stack(boxes)
+    classes = np.stack(classes)
 
-    sorted_mask = dict(sorted(dict_mask.items(), key=lambda x: x[0]))
-    sorted_boxes = dict(sorted(dict_boxes.items(), key=lambda x: x[0]))
-    masks_list = [mask for _, mask in sorted_mask.items()]
-    boxes_list = [boxes for _, boxes in sorted_boxes.items()]
-
-    # for _, mask in sorted_mask.items():
-    #     print(mask.shape)
-
-    masks = np.stack(masks_list)
-    boxes = np.stack(boxes_list)
-
-    print(masks.shape)
-    print(boxes.shape)
-
-    return masks, boxes
+    return masks, boxes, classes
 
 
-def save_images_with_mask_for_all_concepts(image, masks, model, boxes):
+def save_images_with_mask_for_all_concepts(image, masks, categories, boxes, idx):
     img = np.array(image)
     detections = sv.Detections(
         xyxy=boxes,
         mask=masks.astype(bool),  # (n, h, w)
-        class_id=np.array([i for i in range(len(model.ontology.classes()))])
+        class_id=np.array(categories)
     )
 
     # box_annotator = sv.BoxAnnotator()
@@ -191,42 +185,7 @@ def save_images_with_mask_for_all_concepts(image, masks, model, boxes):
 
     image = annotated_frame.astype(np.uint8)
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # Convert to RGB for Matplotlib
-    cv2.imwrite(os.path.join(OUTPUT_DIR, "grounded_sam2_annotated_image_with_mask" + str(idx) + ".jpg"), image_rgb)
-
-def plot_grid_masks(image, masks, classes, idx):
-    # # Load the image and masks (replace with your own loading logic)
-    # image = plt.imread('image.jpg')  # Shape: (H, W, 3)
-    # masks = np.random.randint(0, 2, (58, image.shape[0], image.shape[1]))  # Example masks
-
-    # Define a colormap for the masks
-    cmap = ListedColormap(['none', 'blue'])  # Transparent and Red
-
-    # Create a grid of subplots
-    rows, cols = 4, 4  # Adjust based on your desired layout
-    fig, axes = plt.subplots(rows, cols, figsize=(20, 20))
-    axes = axes.flatten()
-
-    # Loop through each class and plot
-    for i in range(len(classes)):
-        # Overlay the mask onto the image
-        #masked_image = image.copy()
-        mask = masks[i]
-        #masked_image[mask == 1] = [255, 0, 0]  # Example: mask overlay in red
-
-        # Display in the corresponding grid cell
-        axes[i].imshow(image)
-        axes[i].imshow(mask, cmap=cmap, alpha=0.5)  # Overlay mask with transparency
-        axes[i].axis('off')
-        axes[i].set_title(f"{classes[i]}")
-
-    # Turn off unused subplots
-    for i in range(58, len(axes)):
-        axes[i].axis('off')
-
-    # Adjust layout and show the grid
-    plt.tight_layout()
-    plt.savefig(os.path.join(OUTPUT_DIR, "plot_masks" + str(idx) + ".jpg"))
-    plt.close()
+    cv2.imwrite(os.path.join(OUTPUT_DIR, "grounded_sam2_annotated_image_with_mask_all" + str(idx) + ".jpg"), image_rgb)
 
 class GroundedSam2(nn.Module):
     def __init__(self, prompt, model_name):
@@ -283,7 +242,7 @@ class GroundedSam2(nn.Module):
 
         return bbox, categories, confidence_score
 
-    def mask_generation(self, image):
+    def mask_generation(self, image):  #function which generate a mask only for the concept present in the image
         with torch.no_grad():
             with torch.cuda.amp.autocast():
                 results = self.model.predict(image)
@@ -310,7 +269,7 @@ class GroundedSam2(nn.Module):
 
         return boxes, masks, classes
 
-    def mask_generation_with_all_concepts(self, image):
+    def mask_generation_with_all_concepts(self, image, resize): #function which generate a mask (with all values to false) also for the concept not present in the image
 
         with torch.no_grad():
             with torch.cuda.amp.autocast():
@@ -336,7 +295,7 @@ class GroundedSam2(nn.Module):
             classes = np.array([classes])
             masks = np.expand_dims(masks, axis=0)
 
-        masks, boxes = generate_mask_for_all_concepts(classes, masks, boxes)
+        masks, boxes, classes = generate_mask_for_all_concepts(self.model,classes, masks, boxes,resize)
 
         return boxes, masks, classes
 
@@ -360,60 +319,57 @@ class GroundedSam2(nn.Module):
 
 
 if __name__ == '__main__':
-    # caption = ("Fin/Mouth/Ears/Muzzle/Paws/Tail/Body/cassette deck/button/speaker/Handle/Bar"
-    #            "/Window/Tower/Façade/Cross/Bell/Barrel/Cab/Wheel/Hose/Nozzle/Tank/Logo/Cord/Canopy")  #26 concepts for Imagenette
-    caption = "Wall/window/roof/Tree/Vegetation/Rocks/Ice Sheet/Cliff/Wave/Sun/Beach/Sidewalk/Streetlights/Sky" #16 concepts for Intel_Image
+    caption = ("Fin/Ears/Muzzle/Paws/Tail/Body/Button/Speaker/Handle/Blade"
+                "/Rose window/Facade/Bell/Cab/Wheel/Hose/Nozzle/Tank/Golf ball dimples/Logo/Canopy")  #26 concepts for Imagenette
+    #caption = "Wall/Window/Roof/Façade/Tree/Vegetation/Rock/Ice/Mountain Peak/Beach/Boat/Water/Sidewalk/Streetlights/Car/Sky" #16 concepts for Intel_Image
 
+    # caption = ("Very defined erythematous edges/Uneven grey ulcer ground/Granulating and necrotic ulcer background/ "
+    #            "White Fibrin/ Marked erythematous edges")
     #IMAGE_PATH = "images/flower.jpg"
 
-    resize = 224
+    resize = 512
 
-    train, val, test = load_classification_dataset("intel_image", "data", resize)
+    train, val, test = load_classification_dataset("imagenette", "data", resize)
 
-    dataset = test
+    dataset = val
 
     torch.cuda.empty_cache()
 
     model = GroundedSam2(caption, "Grounding DINO")
 
+    print(model.ontology.classes())
+
     # Mostra il path assoluto del file
     absolute_path = os.path.abspath(OUTPUT_DIR)
     print(f"Il file è stato salvato in: {absolute_path}")
 
-    for idx in range(50):
-        print("IMG " + str(idx))
-        # Get the ground truth bounding boxes and labels
-        image, ground_truth_labels = dataset.__getitem__(idx)
+    image, label = dataset.__getitem__(316)
 
-        image = ToPILImage()(image)
+    image = ToPILImage()(image)
 
-        if caption == " ":
-            image = np.array(image)
-            masks = model.automatic_mask_generation(image)
-            save_automatic_generated_mask(masks, image)
-        else:
+    #bbox, categories, confidence = model(image)
 
-            # Predict using the model
-            boxes, masks, classes = model.mask_generation_with_all_concepts(image)
+    #print(bbox)
+    #print(categories)
+    #print(confidence)
 
-            #print(masks.shape)
+    bbox, masks, categories = model.mask_generation_with_all_concepts(image, resize)
 
-            if len(masks) > 0:
-                #save_images_with_mask(boxes,masks,classes,image,model,idx) #usable in case of printing only present class mask
-                #save_images_with_mask_for_all_concepts(image, masks, model, boxes)  #to print all the class masks, even if not present
-                plot_grid_masks(image,masks,model.ontology.classes(),idx)
+    #print(bbox)
+    print(categories)
+    #print(masks)
 
-    # #bbox, categories, confidence = model(cv2.imread(IMAGE_PATH))
-    #
-    # image = Image.open(IMAGE_PATH)
-    # image = np.array(image.convert("RGB"))
-    #
-    # # plt.figure(figsize=(20, 20))
-    # # plt.imshow(image)
-    # # plt.axis('off')
-    # # plt.show()
-    #
-    # model.automatic_mask_generation(image)
-    # # print(bbox)
-    # # print(categories)
-    # # print(confidence)
+    #save_images_with_mask_for_all_concepts(image, masks, categories, bbox, 331)
+
+    plot_grid_masks(image, masks, categories, model.ontology.classes(), 1000)
+
+    #bbox, masks, categories = model.mask_generation(image)
+
+    #print(bbox)
+    #print(categories)
+    #print(masks)
+
+    save_images_with_mask(bbox,masks,categories,image,model, 1000)
+
+
+    

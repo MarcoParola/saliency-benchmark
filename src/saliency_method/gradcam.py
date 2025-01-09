@@ -1,5 +1,6 @@
 import hydra
 import matplotlib.pyplot as plt
+import torch
 import torch.utils.data as data
 from torch import nn
 
@@ -46,6 +47,10 @@ def get_layer_by_name(model, layer_name):
 # main for testing the interface of GradCAM made for this project
 @hydra.main(config_path='../../config', config_name='config', version_base=None)
 def main(cfg):
+    print("GRADCAM")
+    print(cfg.model)
+    print(cfg.dataset.name)
+    print(cfg.checkpoint)
     # Load the model and data
     model = ClassifierModule(
         weights=cfg.model,
@@ -101,6 +106,7 @@ def main(cfg):
         for i in range(images.size(0)): #i-th images of the batch
             # if image_count >= 5:
             #     break
+            print(image_count)
 
             image = images[i]
             image = image.cpu()
@@ -118,8 +124,9 @@ def main(cfg):
             ax[1].set_title(f'Pred: {predicted_class}\nTrue: {true_class}')
 
             if save_images:
-                #output_path = os.path.join(output_dir_images, f'saliency_map_{image_count}.png')
-                #plt.savefig(output_path)
+                if image_count<=200:
+                    output_path = os.path.join(output_dir_images, f'saliency_map_{image_count}.png')
+                    plt.savefig(output_path)
                 save_saliency_map(os.path.join(output_dir_tensors, f'saliency_map_{image_count}.pth'), saliency)
             else:
                 plt.show()
@@ -132,11 +139,11 @@ def main(cfg):
 if __name__ == '__main__':
     main()
     # print("Riprova")
-    # directory_path = 'C:/Users/matte/GitHub/saliency-benchmark/saliency_output/gradCam_saliency_maps_tensors/finetuned_ResNet50_Weights.IMAGENET1K_V1cifar10'
+    # directory_path = 'C:/Users/matte/GitHub/saliency-benchmark/saliency_output/gradCam_saliency_maps_tensors/finetuned_VGG11_Weights.IMAGENET1K_V1imagenette'
     # for filename in os.listdir(directory_path):
     #     file_path = os.path.join(directory_path, filename)
     #     if os.path.isfile(file_path):
     #         print(file_path)
     #         saliency_map = load_saliency_map(file_path)
-    #         print(saliency_map.shape)
+    #         print(saliency_map.dtype)
     #         print(saliency_map)
