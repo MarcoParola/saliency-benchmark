@@ -1,3 +1,4 @@
+import csv
 import glob
 from typing import List
 
@@ -318,6 +319,38 @@ def save_mask(save_path, mask):
 def load_mask(input_path):
     tensor_loaded = torch.load(input_path)
     return tensor_loaded.to(torch.float32)
+
+def save_list(path_file, list):
+    with open(path_file,'w') as f:
+        f.write('\n'.join(list))
+
+def load_list(path_file):
+    with open(path_file, 'r') as f:
+        list = f.read().splitlines()
+    return list
+
+def retrieve_concepts(dataset_name):
+    # Initialize an empty list to store concepts
+    all_concepts = []
+
+    absolute_path = os.path.abspath("concepts")
+
+    # Read the CSV file
+    with open(os.path.join(absolute_path,dataset_name+"_concepts.csv"), mode="r") as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            print(row)
+            # Split the concepts in the current row and extend the list
+            concepts = row["concepts"].split(";")
+            all_concepts.extend(concepts)
+
+    # Format the concepts as a single string separated by "/"
+    caption = "/".join(all_concepts)
+    #num_concepts = len(all_concepts)
+
+    print("Caption:", caption)
+    return caption
+
 
 if __name__ == "__main__":
 
