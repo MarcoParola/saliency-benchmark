@@ -11,7 +11,7 @@ from torchvision.transforms import ToPILImage
 
 from src.datasets.classification import load_classification_dataset
 from src.models.detector.grounded_sam2 import GroundedSam2
-from src.utils import save_mask, load_mask
+from src.utils import save_mask, load_mask, retrieve_concepts
 
 if GlobalHydra().is_initialized():
     GlobalHydra().clear()
@@ -86,28 +86,6 @@ def plot_grid_masks(image, masks,categories, classes, idx):
     plt.tight_layout()
     plt.savefig(os.path.join("output", "plot_masks" + str(idx) + ".jpg"))
     plt.close()
-
-
-def retrieve_concepts(dataset_name):
-    # Initialize an empty list to store concepts
-    all_concepts = []
-
-    absolute_path = os.path.abspath("concepts")
-
-    # Read the CSV file
-    with open(os.path.join(absolute_path,dataset_name+"_concepts.csv"), mode="r") as file:
-        reader = csv.DictReader(file)
-        for row in reader:
-            print(row)
-            # Split the concepts in the current row and extend the list
-            concepts = row["concepts"].split(";")
-            all_concepts.extend(concepts)
-
-    # Format the concepts as a single string separated by "/"
-    caption = "/".join(all_concepts)
-
-    print("Caption:", caption)
-    return caption
 
 @hydra.main(config_path='../config', config_name='config', version_base=None)
 def main(cfg):

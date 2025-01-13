@@ -110,21 +110,28 @@ class rise_interface:
         self.device = device
         self.kwargs = kwargs
 
-    def generate_saliency(self, input_images, target_class=None, target_layer=None):
+    def generate_saliency(self, input_images, predicted_class, target_class=None, target_layer=None):
         # Initialize the RISE method with the model
         rise_model = RISE(self.model)
 
         # Initialize the tensor to store saliency maps for the batch
         batch_saliencies = []
 
+        i = 0
+
         # Generate the saliency maps for each image in the batch
         for image in input_images:
             # Generate the saliency map for the current image
             saliency_map = rise_model(image.unsqueeze(0).to(self.device))
-            saliency_map = saliency_map[0, :]  # Assuming saliency_map is of shape (1, num_channels, height, width)
+            # print(saliency_map.shape)
+            # print(saliency_map)
+            saliency_map = saliency_map[predicted_class[i], :]  # Assuming saliency_map is of shape (1, num_channels, height, width)
+            # print(saliency_map.shape)
+            # print(saliency_map)
 
             # Append the saliency map to the batch_saliencies list
             batch_saliencies.append(saliency_map)
+            i += 1
 
         # Stack the saliency maps along the batch dimension
         saliency_maps = torch.stack(batch_saliencies)
@@ -158,8 +165,7 @@ def main(cfg):
     # load test dataset
     data_dir = os.path.join(cfg.mainDir, cfg.dataset.path)
     train, val, test = load_classification_dataset(cfg.dataset.name, data_dir, cfg.dataset.resize)
-    dataset = ClassificationDataset(test)
-    dataloader = data.DataLoader(dataset, batch_size=cfg.train.batch_size, shuffle=True)
+    dataloader = data.DataLoader(test, batch_size=1, shuffle=True)
 
     # Flag to determine whether to save or show images
     save_images = cfg.visualize.save_images
@@ -190,7 +196,8 @@ def main(cfg):
         _, preds = torch.max(outputs, 1)
 
         # Generate saliency maps
-        saliency_maps = method.generate_saliency(images)
+        saliency_maps = method.generate_saliency(images, preds)
+        #print(saliency_maps.shape)
 
         for i in range(images.size(0)):
             # if image_count >= 5:

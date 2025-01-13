@@ -27,7 +27,8 @@ def main(cfg):
     print("SIDU")
     print(cfg.model)
     print(cfg.dataset.name)
-
+    print(cfg.checkpoint)
+    torch.cuda.empty_cache()
     # Load the model and data
     model = ClassifierModule(
         weights=cfg.model,
@@ -48,8 +49,7 @@ def main(cfg):
     # load test dataset
     data_dir = os.path.join(cfg.mainDir, cfg.dataset.path)
     train, val, test = load_classification_dataset(cfg.dataset.name, data_dir, cfg.dataset.resize)
-    dataset = ClassificationDataset(test)
-    dataloader = data.DataLoader(dataset, batch_size=cfg.train.batch_size, shuffle=True)
+    dataloader = data.DataLoader(test, batch_size=cfg.train.batch_size, shuffle=True)
 
     # Flag to determine whether to save or show images
     save_images = cfg.visualize.save_images
