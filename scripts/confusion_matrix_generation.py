@@ -28,25 +28,6 @@ def compute_cm(predictions, labels, classes, model, dataset_name):
     # Stampa o salva la confusion matrix
     print("Confusion Matrix:\n", cm)
 
-    # plt.figure(figsize=(10, 8))
-    # sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=range(self.num_classes),
-    #             yticklabels=range(self.num_classes))
-    # plt.xlabel("Predicted Label")
-    # plt.ylabel("True Label")
-    # plt.title("Confusion Matrix")
-    # Mostra la confusion matrix
-    # disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=classes)
-    # disp.plot(cmap="Blues")
-    # plt.title("Confusion Matrix")
-    # plt.show()
-    # plt.savefig(os.path.join("confusion_matrix", "cm_" + model + "_" + dataset_name + ".jpg"))
-    # plt.close()
-
-    # wandb.log({"confusion_matrix":  wandb.plot.confusion_matrix(
-    #         probs=None,
-    #         y_true=all_labels,
-    #         preds=all_predictions)})
-
     plt.imshow(cm, interpolation='nearest', cmap='OrRd')
     plt.title('Confusion matrix')
     plt.colorbar()
