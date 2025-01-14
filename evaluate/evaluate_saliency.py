@@ -5,7 +5,7 @@ from tqdm import tqdm
 from src.datasets.classification import ClassificationDataset, load_classification_dataset
 from src.models.classifier import ClassifierModule
 from src.metrics.saliency_metrics import Insertion, Deletion
-from src.utils import load_saliecy_method
+from src.utils import load_saliency_method
 
 
 @hydra.main(config_path='../config', config_name='config')
@@ -48,7 +48,7 @@ def main(cfg):
     target_layer = cfg.target_layers[cfg.model.split('_Weights')[0]]
 
     # load saliency method
-    saliency_method = load_saliecy_method(cfg.saliency.method, model, device=cfg.train.device)
+    saliency_method = load_saliency_method(cfg.saliency.method, model, device=cfg.train.device)
 
     # Lists to store AUC scores
     insertion_scores = []

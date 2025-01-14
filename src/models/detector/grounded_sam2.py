@@ -30,20 +30,6 @@ OUTPUT_DIR = "output"
 
 import requests
 
-
-def get_wikipedia_description(word):
-    url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{word}"
-    response = requests.get(url)
-
-    if response.status_code == 200:
-        data = response.json()
-        # Extract the summary of the page
-        description = data.get('extract', 'No description found.')
-        return description
-    else:
-        return "Sorry, no description found." + chr(random.randint(32, 126))
-
-
 def create_ontology_from_string(caption):
     print("caption:" + str(caption))
     # nlp = spacy.load("en_core_web_sm")
@@ -113,35 +99,6 @@ def save_images_with_mask(input_boxes, masks, class_ids, img, model, idx):
     image = annotated_frame.astype(np.uint8)
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # Convert to RGB for Matplotlib
     cv2.imwrite(os.path.join(OUTPUT_DIR, "grounded_sam2_annotated_image_with_mask" + str(idx) + ".jpg"), image_rgb)
-
-
-def save_automatic_generated_mask(masks, image, idx):
-    print(masks)
-    print(len(masks))
-    print(masks[0].keys())
-    plt.figure(figsize=(20, 20))
-    plt.imshow(image)
-    show_anns(masks)
-    plt.axis('off')
-    plt.savefig(os.path.join(OUTPUT_DIR, "grounded_sam2_annotated_image_with_mask" + str(idx) + ".jpg"))
-    plt.close()
-
-
-def show_anns(anns):
-    if len(anns) == 0:
-        return
-    sorted_anns = sorted(anns, key=(lambda x: x['area']), reverse=True)
-    ax = plt.gca()
-    ax.set_autoscale_on(False)
-
-    img = np.ones((sorted_anns[0]['segmentation'].shape[0], sorted_anns[0]['segmentation'].shape[1], 4))
-    img[:, :, 3] = 0
-    for ann in sorted_anns:
-        m = ann['segmentation']
-        color_mask = np.concatenate([np.random.random(3), [0.35]])
-        img[m] = color_mask
-    ax.imshow(img)
-
 
 def generate_mask_for_all_concepts(model,classes, masks, boxes, resize):
 
@@ -299,24 +256,6 @@ class GroundedSam2(nn.Module):
 
         return boxes, masks, classes
 
-    def automatic_mask_generation(self, image):
-
-        # select the device for computation
-        if torch.cuda.is_available():
-            device = torch.device("cuda")
-        else:
-            device = torch.device("cpu")
-
-        sam2_checkpoint = "~/.cache/autodistill/segment_anything_2/sam2_hiera_large.pt"
-        checkpoint = os.path.expanduser(sam2_checkpoint)
-        model_cfg = "sam2_hiera_l.yaml"
-
-        sam2 = build_sam2(model_cfg, checkpoint, device=device, apply_postprocessing=False)
-        mask_generator = SAM2AutomaticMaskGenerator(model=sam2)
-
-        masks = mask_generator.generate(image)
-        return masks
-
 
 if __name__ == '__main__':
     caption = ("Fin/Ears/Muzzle/Paws/Tail/Body/Button/Speaker/Handle/Blade"
@@ -343,7 +282,7 @@ if __name__ == '__main__':
     absolute_path = os.path.abspath(OUTPUT_DIR)
     print(f"Il file è stato salvato in: {absolute_path}")
 
-    image, label = dataset.__getitem__(316)
+    image, label = dataset.__getitem__(1000)
 
     image = ToPILImage()(image)
 
@@ -361,7 +300,7 @@ if __name__ == '__main__':
 
     #save_images_with_mask_for_all_concepts(image, masks, categories, bbox, 331)
 
-    plot_grid_masks(image, masks, categories, model.ontology.classes(), 1000)
+    #plot_grid_masks(image, masks, categories, model.ontology.classes(), 1000)
 
     #bbox, masks, categories = model.mask_generation(image)
 

@@ -1,7 +1,0 @@
-class,concepts
-Buildings,Wall;Window;Roof;Facade
-Forest,Tree;Vegetation
-Glacier,Rock;Ice
-Mountain,Mountain Peak
-Sea,Boat;Beach;Water;Sky
-Street,Sidewalk;Streetlights;Car

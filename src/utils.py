@@ -294,7 +294,7 @@ def get_early_stopping(patience=10):
     return early_stopping_callback
 
 
-def load_saliecy_method(method, model, device='cpu', **kwargs):
+def load_saliency_method(method, model, device='cpu', **kwargs):
     if method == 'sidu':
         return sidu_interface(model, device=device, **kwargs)
     elif method == 'gradcam':
@@ -303,6 +303,8 @@ def load_saliecy_method(method, model, device='cpu', **kwargs):
         return rise_interface(model, device=device, **kwargs)
     elif method == 'lime':
         return lime_interface(model, device=device, **kwargs)
+    elif method == 'lrp':
+        return  lrp_interface(model,)
     else:
         raise ValueError(f'Unknown saliency method: {method}')
 
