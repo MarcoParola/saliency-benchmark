@@ -22,11 +22,16 @@ import torch.utils.data as data
 import hydra
 
 class lrp_interface:
-    def __init__(self, model, batch, resize, device='cpu', **kwargs):
+    def __init__(self, model, device='cpu', **kwargs):
         self.model = model.model[0]
         self.device = device
         self.kwargs = kwargs
 
+        self.name_map = None
+        self.name_map: List[Tuple[List[str], rules.LrpRule,
+        Dict[str, Union[torch.Tensor, float]]]]
+
+    def generate_saliency(self, input_images, batch, resize, target_class=None, target_layer=None):
         # Low and high parameters for zB-rule
         batch_size = batch
         shape: Tuple[int] = (batch_size, 3, resize, resize)
@@ -39,9 +44,6 @@ class lrp_interface:
         filter_by_layer_index_type: LayerFilter = LayerFilter(model=self.model,
                                                               target_types=target_types)
 
-        self.name_map: List[Tuple[List[str], rules.LrpRule,
-        Dict[str, Union[torch.Tensor, float]]]]
-
         # LRP Composite from Montavon's lrp-tutorial
         self.name_map = [
             (filter_by_layer_index_type(lambda n: n == 0), LrpZBoxRule, {'low': low, 'high': high}),
@@ -49,8 +51,6 @@ class lrp_interface:
             (filter_by_layer_index_type(lambda n: 17 <= n <= 30), LrpEpsilonRule, {'epsilon': 0.25}),
             (filter_by_layer_index_type(lambda n: 31 <= n), LrpZeroRule, {}),
         ]
-
-    def generate_saliency(self, input_images, target_class=None, target_layer=None):
         # Init LRP
         lrp_instance = LRP(self.model)
 
@@ -121,7 +121,7 @@ def main(cfg):
     # Initialize the Saliency method
     # target_layers_name = cfg.target_layers[cfg.model.split('_Weights')[0]]
     # print("target_layers_name", target_layers_name)
-    method = lrp_interface(model, device=cfg.train.device, batch=cfg.train.batch_size,resize=cfg.dataset.resize, reshape_transform=False)
+    method = lrp_interface(model, device=cfg.train.device, reshape_transform=False)
 
     image_count = 0
 
@@ -136,7 +136,7 @@ def main(cfg):
         _, preds = torch.max(outputs, 1)
 
         # Generate saliency maps
-        saliency_maps = method.generate_saliency(input_images=images)
+        saliency_maps = method.generate_saliency(input_images=images, batch=cfg.train.batch_size,resize=cfg.dataset.resize)
 
         for i in range(images.size(0)): #i-th images of the batch
             # if image_count >= 2:

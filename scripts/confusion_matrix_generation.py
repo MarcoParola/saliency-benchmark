@@ -26,18 +26,18 @@ def compute_cm(predictions, labels, classes, model, dataset_name):
     cm = confusion_matrix(all_predictions, all_labels)
 
     # Stampa o salva la confusion matrix
-    print("Confusion Matrix:\n", cm)
+    #print("Confusion Matrix:\n", cm)
 
     plt.imshow(cm, interpolation='nearest', cmap='OrRd')
     plt.title('Confusion matrix')
     plt.colorbar()
     tick_marks = np.arange(len(classes))
-    print(tick_marks)
+    #print(tick_marks)
     plt.xticks(tick_marks, classes, rotation=45)
     plt.yticks(tick_marks, classes)
 
     cm = np.round(cm.astype('float') / cm.sum(axis=1)[:, np.newaxis], 2)
-    print("Normalized confusion matrix")
+    #print("Normalized confusion matrix")
     thresh = 0.6
 
     for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
@@ -77,7 +77,7 @@ def main(cfg):
     data_dir = os.path.join(cfg.currentDir, cfg.dataset.path)
     train, val, test = load_classification_dataset(cfg.dataset.name, data_dir, cfg.dataset.resize)
 
-    print(test.classes)
+    #print(test.classes)
 
     test_loader = torch.utils.data.DataLoader(test,
                                               batch_size=cfg.train.batch_size,

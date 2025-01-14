@@ -18,6 +18,7 @@ from torchvision.transforms import ToPILImage
 
 import datasets
 from src.datasets.classification import load_classification_dataset
+from src.saliency_method.lrp_method import lrp_interface
 
 from src.saliency_method.sidu import sidu_interface
 from src.saliency_method.gradcam import gradcam_interface
@@ -304,7 +305,7 @@ def load_saliency_method(method, model, device='cpu', **kwargs):
     elif method == 'lime':
         return lime_interface(model, device=device, **kwargs)
     elif method == 'lrp':
-        return  lrp_interface(model,)
+         return lrp_interface(model,device=device, **kwargs)
     else:
         raise ValueError(f'Unknown saliency method: {method}')
 
@@ -335,10 +336,10 @@ def retrieve_concepts(dataset_name):
     # Initialize an empty list to store concepts
     all_concepts = []
 
-    absolute_path = os.path.abspath("concepts")
+    absolute_path = os.path.abspath("data")
 
     # Read the CSV file
-    with open(os.path.join(absolute_path,dataset_name+"_concepts.csv"), mode="r") as file:
+    with open(os.path.join(absolute_path,'concepts',dataset_name+"_concepts.csv"), mode="r") as file:
         reader = csv.DictReader(file)
         for row in reader:
             print(row)

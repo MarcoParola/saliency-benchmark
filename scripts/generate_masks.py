@@ -13,22 +13,6 @@ from src.utils import save_mask, load_mask, retrieve_concepts, save_list
 if GlobalHydra().is_initialized():
     GlobalHydra().clear()
 
-
-def create_mask_dictionary(masks,categories, classes):
-    # Creazione del dizionario con lista di maschere per ogni categoria
-    mask_dict = {}
-    print("classes:"+str(classes))
-
-    for i in range(len(categories)):
-        category = classes[categories[i]]
-        if category not in mask_dict:
-            mask_dict[category] = []  # Inizializza una lista se la categoria non esiste
-        mask_dict[category].append(masks[i].tolist())  # Aggiungi la maschera alla lista della categoria
-
-    # Stampa del dizionario risultante
-    print(mask_dict)
-    return mask_dict
-
 @hydra.main(config_path='../config', config_name='config', version_base=None)
 def main(cfg):
     caption = retrieve_concepts(cfg.dataset.name)
@@ -50,9 +34,6 @@ def main(cfg):
     output_folder = os.path.join(os.path.abspath('mask_output'), cfg.dataset.name)
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
-
-    # with open(os.path.join(output_folder,'list_classes.txt'), 'w') as f:
-    #     f.write('\n'.join(model.ontology.classes()))
 
     save_list(os.path.join(output_folder,'list_classes.txt'), model.ontology.classes())
 
@@ -80,11 +61,7 @@ def main(cfg):
                 os.makedirs(output_dir_classes)
             save_mask(os.path.join(output_dir_tensors, f'mask_{idx}.pth'), masks)
             save_mask(os.path.join(output_dir_classes, f'classes_{idx}.pth'), classes) # I keep also the numpy array containing the classes
-            # output_dir_tensors = os.path.join(os.path.abspath('mask_output'), cfg.dataset.name)
-            # if not os.path.exists(output_dir_tensors):
-            #     os.makedirs(output_dir_tensors)
-            # with open(os.path.join(output_dir_tensors, f'mask_{idx}.json'), "w") as f:
-            #     json.dump(create_mask_dictionary(masks,classes,model.ontology.classes()), f)
+
 
 if __name__ == '__main__':
     main()

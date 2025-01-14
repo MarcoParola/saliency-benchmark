@@ -47,20 +47,18 @@ def main(cfg):
     dir = os.path.join(absolute_path, cfg.dataset.name)
 
     list_concepts = load_list(os.path.join(dir, 'list_classes.txt'))
-    print(list_concepts)
+    #print(list_concepts)
     n_concepts = len(list_concepts)
 
     n_classes = cfg[cfg.dataset.name].n_classes
-    print(n_classes)
-    print(n_concepts)
+    #print(n_classes)
+    #print(n_concepts)
     mat = torch.zeros(n_concepts, n_classes)
-    print(mat)
-    print(mat.shape)
 
     train, val, test = load_classification_dataset(cfg.dataset.name, 'data', 224)
 
     dataset = test
-    print("Classes dataset:", dataset.classes)
+    #print("Classes dataset:", dataset.classes)
 
     counter_classes = torch.zeros(n_classes)
 

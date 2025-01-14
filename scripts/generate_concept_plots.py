@@ -37,24 +37,24 @@ def find_closest_factors(n):
         a -= 1
 
     return best_a, best_b
-def create_mask_dictionary(masks,categories):
-    # Creazione del dizionario con lista di maschere per ogni categoria
+
+
+def create_mask_dictionary(masks, categories):
+    # Creation of dict with masks for each category
     mask_dict = {}
 
     for i in range(len(categories)):
         category = categories[i]
         if category not in mask_dict:
-            mask_dict[category] = []  # Inizializza una lista se la categoria non esiste
-        mask_dict[category].append(masks[i])  # Aggiungi la maschera alla lista della categoria
+            mask_dict[category] = []  # Initialize list if for a specific category it does not exist
+        mask_dict[category].append(masks[i])  # Add masks to the specific category list
 
-    # Stampa del dizionario risultante
     return mask_dict
 
-def plot_grid_masks(image, masks,categories, classes, idx):
-    # # Load the image and masks (replace with your own loading logic)
-    # image = plt.imread('image.jpg')  # Shape: (H, W, 3)
-    # masks = np.random.randint(0, 2, (58, image.shape[0], image.shape[1]))  # Example masks
-    mask_dict = create_mask_dictionary(masks,categories)
+
+def plot_grid_masks(image, masks, categories, classes, idx):
+
+    mask_dict = create_mask_dictionary(masks, categories)
 
     # Define a colormap for the masks
     cmap = ListedColormap(['none', 'blue'])  # Transparent and Red
@@ -87,14 +87,9 @@ def plot_grid_masks(image, masks,categories, classes, idx):
     plt.savefig(os.path.join("output", "plot_masks" + str(idx) + ".jpg"))
     plt.close()
 
+
 @hydra.main(config_path='../config', config_name='config', version_base=None)
 def main(cfg):
-    # caption = ("Fin/Mouth/Ears/Muzzle/Paws/Tail/Body/cassette deck/button/speaker/Handle/Bar"
-    #            "/Window/Tower/Façade/Cross/Bell/Barrel/Cab/Wheel/Hose/Nozzle/Tank/Logo/Cord/Canopy")  #26 concepts for Imagenette
-    # caption = "Wall/window/roof/Tree/Vegetation/Rocks/Ice/Hillside/Valley/Wave/Water/Sidewalk/Streetlights/Sky/"  # 15 concepts for Intel_Image
-
-    # caption = ("Very defined erythematous edges/Uneven grey ulcer ground/Granulating and necrotic ulcer background/ "
-    #            "White Fibrin/ Marked erythematous edges")
     caption = retrieve_concepts(cfg.dataset.name)
 
     resize = 512
@@ -120,7 +115,7 @@ def main(cfg):
         # Predict using the model
         boxes, masks, classes = model.mask_generation_with_all_concepts(image, resize)
 
-        print(classes)
+        #print(classes)
 
         # print(masks.shape)
 
@@ -132,4 +127,3 @@ def main(cfg):
 
 if __name__ == '__main__':
     main()
-
