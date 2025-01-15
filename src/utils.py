@@ -267,6 +267,27 @@ def save_annotated_grounding_dino(image, true_boxes, ground_truth_labels, predic
 
     cv2.imwrite(os.path.join(OUTPUT_DIR, "image_box" + str(iteration) + ".jpg"), image_rgb)
 
+def save_images_with_mask_for_all_concepts(image, masks, categories, classes_model, boxes, idx, output_dir):
+    img = np.array(image)
+    detections = sv.Detections(
+        xyxy=boxes,
+        mask=masks.astype(bool),  # (n, h, w)
+        class_id=np.array(categories)
+    )
+
+    # box_annotator = sv.BoxAnnotator()
+    # annotated_frame = box_annotator.annotate(scene=img.copy(), detections=detections)
+
+    label_annotator = sv.LabelAnnotator()
+    annotated_frame = label_annotator.annotate(scene=img, detections=detections,
+                                               labels=retrieve_labels(classes_model, detections.class_id))
+
+    mask_annotator = sv.MaskAnnotator()
+    annotated_frame = mask_annotator.annotate(scene=annotated_frame, detections=detections)
+
+    image = annotated_frame.astype(np.uint8)
+    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # Convert to RGB for Matplotlib
+    cv2.imwrite(os.path.join(output_dir, "grounded_sam2_annotated_image_with_mask_all" + str(idx) + ".jpg"), image_rgb)
 
 def get_save_model_callback(save_path):
     """Returns a ModelCheckpoint callback
