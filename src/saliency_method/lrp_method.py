@@ -17,7 +17,7 @@ from torch import nn
 
 from src.datasets.classification import load_classification_dataset
 from src.models.classifier import ClassifierModule
-from src.utils import save_saliency_map
+from src.utils import *
 import torch.utils.data as data
 import hydra
 
@@ -119,8 +119,6 @@ def main(cfg):
         os.makedirs(output_dir_tensors, exist_ok=True)
 
     # Initialize the Saliency method
-    # target_layers_name = cfg.target_layers[cfg.model.split('_Weights')[0]]
-    # print("target_layers_name", target_layers_name)
     method = lrp_interface(model, device=cfg.train.device, reshape_transform=False)
 
     image_count = 0
