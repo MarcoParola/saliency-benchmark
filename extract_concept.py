@@ -3,6 +3,7 @@ import os
 import cv2
 import torch
 import hydra
+import torchvision
 from hydra.core.global_hydra import GlobalHydra
 from torchvision.transforms import ToPILImage
 
@@ -66,16 +67,29 @@ def main(cfg):
     else:
         # if cfg.mask.dataset == False, that means that we want to produce the mask for a single image
 
-        caption = "beak/feathers/eyes" #TODO come passo i concetti?
+        caption = cfg.mask.concepts
 
         if cfg.modelSam == 'Florence2':
             model = GroundedSam2(caption, 'Florence 2')  # call the model passing to it the caption
         elif cfg.modelSam == 'GroundingDino':
             model = GroundedSam2(caption, 'Grounding DINO')
 
-        image = cv2.imread("images/bird.jpg")
+        image = cv2.imread(f"data/image/{cfg.mask.file_image}")
 
         resize = cfg.dataset.resize
+
+        transform = torchvision.transforms.Compose([
+            torchvision.transforms.ToTensor(),
+            torchvision.transforms.Resize((cfg.dataset.resize, cfg.dataset.resize)),
+        ])
+
+        img = transform(image)
+        # clip image to be three channels
+        if img.shape[0] == 1:
+            img = img.repeat(3, 1, 1)
+        image = img
+
+        image = ToPILImage()(image)
 
         # Predict using the model
         boxes, masks, classes = model.mask_generation_with_all_concepts(image, resize)

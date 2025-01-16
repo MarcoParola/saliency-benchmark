@@ -120,9 +120,7 @@ def main(cfg):
         # cfg.saliency.dataset == False, and so, we want to produce the saliency map only for one image, present in data/image
         print("SINGLE IMAGE")
 
-        image = cv2.imread("images/bird.jpg") #TODO decide where save this image
-        #image = torch.from_numpy(image).permute(2, 0, 1)
-        #image = image.to(torch.float32)
+        image = cv2.imread(f"data/image/{cfg.saliency.file_image}")
 
         transform = torchvision.transforms.Compose([
             torchvision.transforms.ToTensor(),
@@ -136,12 +134,7 @@ def main(cfg):
             img = img.repeat(3, 1, 1)
         image = img.unsqueeze(0)
 
-        print(image.dtype)
-        print(type(image))
-        print(image.shape)
-
         # Generate saliency maps
-        # TODO faccio così o standardizzo tutte le funzioni generate_saliency inserendo batch e resize?
         if cfg.saliency.method == "rise":
             saliency_map = saliency_method.generate_saliency(image, [0])
         elif cfg.saliency.method == "lrp":
@@ -151,8 +144,6 @@ def main(cfg):
             saliency_map = saliency_method.generate_saliency(input_images=image, target_layer=target_layer)
 
         saliency = saliency_map.cpu()
-
-        print(saliency.shape)
 
         # Create figure
         fig, ax = plt.subplots(1, 2, figsize=(5, 2.5))
