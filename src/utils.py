@@ -18,6 +18,7 @@ from torchvision.transforms import ToPILImage
 
 import datasets
 from src.datasets.classification import load_classification_dataset
+from src.saliency_method.lrp_method import lrp_interface
 
 from src.saliency_method.sidu import sidu_interface
 from src.saliency_method.gradcam import gradcam_interface
@@ -266,6 +267,27 @@ def save_annotated_grounding_dino(image, true_boxes, ground_truth_labels, predic
 
     cv2.imwrite(os.path.join(OUTPUT_DIR, "image_box" + str(iteration) + ".jpg"), image_rgb)
 
+def save_images_with_mask_for_all_concepts(image, masks, categories, classes_model, boxes, idx, output_dir):
+    img = np.array(image)
+    detections = sv.Detections(
+        xyxy=boxes,
+        mask=masks.astype(bool),  # (n, h, w)
+        class_id=np.array(categories)
+    )
+
+    # box_annotator = sv.BoxAnnotator()
+    # annotated_frame = box_annotator.annotate(scene=img.copy(), detections=detections)
+
+    label_annotator = sv.LabelAnnotator()
+    annotated_frame = label_annotator.annotate(scene=img, detections=detections,
+                                               labels=retrieve_labels(classes_model, detections.class_id))
+
+    mask_annotator = sv.MaskAnnotator()
+    annotated_frame = mask_annotator.annotate(scene=annotated_frame, detections=detections)
+
+    image = annotated_frame.astype(np.uint8)
+    image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # Convert to RGB for Matplotlib
+    cv2.imwrite(os.path.join(output_dir, "grounded_sam2_annotated_image_with_mask_all" + str(idx) + ".jpg"), image_rgb)
 
 def get_save_model_callback(save_path):
     """Returns a ModelCheckpoint callback
@@ -294,7 +316,7 @@ def get_early_stopping(patience=10):
     return early_stopping_callback
 
 
-def load_saliecy_method(method, model, device='cpu', **kwargs):
+def load_saliency_method(method, model, device='cpu', **kwargs):
     if method == 'sidu':
         return sidu_interface(model, device=device, **kwargs)
     elif method == 'gradcam':
@@ -303,6 +325,8 @@ def load_saliecy_method(method, model, device='cpu', **kwargs):
         return rise_interface(model, device=device, **kwargs)
     elif method == 'lime':
         return lime_interface(model, device=device, **kwargs)
+    elif method == 'lrp':
+         return lrp_interface(model,device=device, **kwargs)
     else:
         raise ValueError(f'Unknown saliency method: {method}')
 
@@ -333,10 +357,10 @@ def retrieve_concepts(dataset_name):
     # Initialize an empty list to store concepts
     all_concepts = []
 
-    absolute_path = os.path.abspath("concepts")
+    absolute_path = os.path.abspath("data")
 
     # Read the CSV file
-    with open(os.path.join(absolute_path,dataset_name+"_concepts.csv"), mode="r") as file:
+    with open(os.path.join(absolute_path,'concepts',dataset_name+"_concepts.csv"), mode="r") as file:
         reader = csv.DictReader(file)
         for row in reader:
             print(row)

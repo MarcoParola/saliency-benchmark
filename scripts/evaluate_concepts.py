@@ -1,13 +1,43 @@
+import itertools
 import os
 
 import hydra
 import numpy as np
 import torch
 from matplotlib import pyplot as plt
+from sklearn.metrics.pairwise import cosine_similarity
 
 from src.datasets.classification import load_classification_dataset
 from src.utils import load_mask, load_list
 
+
+def compute_cm_cosine_similarity(matrix, dataset_name, classes):
+
+    similarity_matrix = cosine_similarity(matrix.T)
+
+    print("Confusion Matrix (Cosine Similarities):")
+    similarity_matrix = np.round(similarity_matrix, decimals=2)
+    print(similarity_matrix)
+
+    plt.imshow(similarity_matrix, interpolation='nearest', cmap='OrRd')
+    plt.title(f'Similarity matrix {dataset_name}')
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    print(tick_marks)
+    plt.xticks(tick_marks, classes, rotation=45)
+    plt.yticks(tick_marks, classes)
+    thresh = 0.6
+
+    for i, j in itertools.product(range(similarity_matrix.shape[0]), range(similarity_matrix.shape[1])):
+        plt.text(j, i, similarity_matrix[i, j], horizontalalignment="center", color="white" if similarity_matrix[i, j] > thresh else "black")
+
+    plt.tight_layout()
+    # plt.show()
+    output_dir = os.path.abspath('confusion_matrices')
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    plt.savefig(os.path.join("confusion_matrices", "cm_concepts_classes_"+ dataset_name + ".jpg"))
+    plt.close()
 
 @hydra.main(config_path='../config', config_name='config', version_base=None)
 def main(cfg):
@@ -17,20 +47,18 @@ def main(cfg):
     dir = os.path.join(absolute_path, cfg.dataset.name)
 
     list_concepts = load_list(os.path.join(dir, 'list_classes.txt'))
-    print(list_concepts)
+    #print(list_concepts)
     n_concepts = len(list_concepts)
 
     n_classes = cfg[cfg.dataset.name].n_classes
-    print(n_classes)
-    print(n_concepts)
+    #print(n_classes)
+    #print(n_concepts)
     mat = torch.zeros(n_concepts, n_classes)
-    print(mat)
-    print(mat.shape)
 
     train, val, test = load_classification_dataset(cfg.dataset.name, 'data', 224)
 
     dataset = test
-    print("Classes dataset:", dataset.classes)
+    #print("Classes dataset:", dataset.classes)
 
     counter_classes = torch.zeros(n_classes)
 
@@ -75,6 +103,8 @@ def main(cfg):
         os.makedirs(output_dir)
     plt.savefig(os.path.join(output_dir, "hist_" + cfg.dataset.name + ".jpg"))
     plt.close()
+
+    compute_cm_cosine_similarity(mat, cfg.dataset.name, dataset.classes)
 
 if __name__ == "__main__":
     main()

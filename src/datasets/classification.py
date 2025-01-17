@@ -69,6 +69,9 @@ def load_classification_dataset(dataset, data_dir, resize=256, val_split=0.2, te
 
         split = int(len(train) * val_split)
         train, val = torch.utils.data.random_split(train, [len(train) - split, split])
+        train = ClassificationDataset(train)
+        val = ClassificationDataset(val)
+        test = ClassificationDataset(test)
 
     # CIFAR-100
     elif dataset == 'cifar100':
@@ -77,6 +80,9 @@ def load_classification_dataset(dataset, data_dir, resize=256, val_split=0.2, te
 
         split = int(len(train) * val_split)
         train, val = torch.utils.data.random_split(train, [len(train) - split, split])
+        train = ClassificationDataset(train)
+        val = ClassificationDataset(val)
+        test = ClassificationDataset(test)
 
     # Caltech101
     elif dataset == 'caltech101':
@@ -91,6 +97,9 @@ def load_classification_dataset(dataset, data_dir, resize=256, val_split=0.2, te
         train = torch.utils.data.Subset(data, train_idx)
         val = torch.utils.data.Subset(data, val_idx)
         test = torch.utils.data.Subset(data, test_idx)
+        train = ClassificationDataset(train)
+        val = ClassificationDataset(val)
+        test = ClassificationDataset(test)
 
 
     # ImageNet
@@ -106,6 +115,9 @@ def load_classification_dataset(dataset, data_dir, resize=256, val_split=0.2, te
         val = torchvision.datasets.ImageFolder(os.path.join(data_dir), preprocess)
         train = val
         test = val
+        train = ClassificationDataset(train)
+        val = ClassificationDataset(val)
+        test = ClassificationDataset(test)
         '''
         from torchvision.datasets import ImageFolder
         val = datasets.load_dataset('mrm8488/ImageNet1K-val', split='train')
@@ -145,6 +157,9 @@ def load_classification_dataset(dataset, data_dir, resize=256, val_split=0.2, te
         train = torch.utils.data.Subset(data, train_idx)
         val = torch.utils.data.Subset(data, val_idx)
         test = torch.utils.data.Subset(data, test_idx)
+        train = ClassificationDataset(train)
+        val = ClassificationDataset(val)
+        test = ClassificationDataset(test)
 
     # Oxford Flowers
     elif dataset == 'oxford-flowers':
@@ -159,6 +174,9 @@ def load_classification_dataset(dataset, data_dir, resize=256, val_split=0.2, te
         train = data
         val = val_data
         test = test_data
+        train = ClassificationDataset(train)
+        val = ClassificationDataset(val)
+        test = ClassificationDataset(test)
 
     # SVHN
     elif dataset == 'svhn':
@@ -168,6 +186,9 @@ def load_classification_dataset(dataset, data_dir, resize=256, val_split=0.2, te
 
         split = int(len(train) * val_split)
         train, val = torch.utils.data.random_split(train, [len(train) - split, split])
+        train = ClassificationDataset(train)
+        val = ClassificationDataset(val)
+        test = ClassificationDataset(test)
 
     # MNIST
     elif dataset == 'mnist':
@@ -175,6 +196,9 @@ def load_classification_dataset(dataset, data_dir, resize=256, val_split=0.2, te
         test = torchvision.datasets.MNIST(data_dir, train=False, download=True, transform=transform)
         split = int(len(train) * val_split)
         train, val = torch.utils.data.random_split(train, [len(train) - split, split])
+        train = ClassificationDataset(train)
+        val = ClassificationDataset(val)
+        test = ClassificationDataset(test)
 
     # FashionMNIST
     elif dataset == 'fashionmnist':
@@ -182,6 +206,9 @@ def load_classification_dataset(dataset, data_dir, resize=256, val_split=0.2, te
         test = torchvision.datasets.FashionMNIST(data_dir, train=False, download=True, transform=transform)
         split = int(len(train) * val_split)
         train, val = torch.utils.data.random_split(train, [len(train) - split, split])
+        train = ClassificationDataset(train)
+        val = ClassificationDataset(val)
+        test = ClassificationDataset(test)
 
     elif dataset == 'imagenette':
         train = load_dataset('frgfm/imagenette', 'full_size', split='train')

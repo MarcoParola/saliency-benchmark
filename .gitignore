@@ -179,3 +179,5 @@ images/
 images_labeled/
 .idea
 confusion_matrices
+histograms
+mask_output

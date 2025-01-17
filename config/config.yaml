@@ -8,25 +8,32 @@ currentDir: ${hydra:runtime.cwd}
 mainDir: C:\Users\matte\Github\saliency-benchmark
 
 modelDet: GroundedSam2
-modelSam: Florence2
+modelSam: GroundingDino
 
 datasetDet:
   name: coco2017
 
 model: VGG11_Weights.IMAGENET1K_V1
 seed: 42
-checkpoint: checkpoints\finetuned_VGG11_Weights.IMAGENET1K_V1imagenette\model-epoch=19-val_loss=1.52.ckpt
+checkpoint: checkpoints\finetuned_VGG11_Weights.IMAGENET1K_V1intel_image\model-epoch=13-val_loss=1.12.ckpt
 
 dataset: 
-  name: imagenette
+  name: intel_image
   path: ./data
   resize: 224
 
 visualize:
   save_images: true
 
+mask:
+  dataset: False
+  concepts: "Beak/Feathers/Eyes"
+  file_image: "bird.jpg"
+
 saliency:
   method: gradcam
+  dataset: False
+  file_image: "bird.jpg"
 
 metrics:
   name: iou
@@ -34,7 +41,7 @@ metrics:
   output_file: "finetuned_ResNet50_cifar10_gradcam.txt"
 
 train:
-  batch_size: 32
+  batch_size: 1
   max_epochs: 20
   lr: 1e-6
   weight_decay: 5e-4

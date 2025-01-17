@@ -3,44 +3,81 @@ Documentation for installing and using the repo.
 
 ## Install
 
-To install the project, clone the repository and get the necessary dependencies:
 ```sh
+# Clone repository
 git clone https://github.com/MarcoParola/saliency-benchmark.git
 cd saliency-benchmark
-```
 
-Create the virtualenv (you can also use conda) and install the dependencies of *requirements.txt*
-
-```bash
+# Create virtual environment and install dependencies
 python -m venv env
-. env/bin/activate
-python -m pip install -r requirements.txt
-```
+env/Scripts/activate
+./setup.bat
+mkdir data
+mkdir data/image
 
-Next, create a new project on [Weights & Biases](https://wandb.ai/site) named `saliency-benchmark`. Edit `entity` parameter in [config.yaml](https://github.com/MarcoParola/saliency-benchmark/blob/main/config/config.yaml) by setting your wandb nick. Log in and paste your API key when prompted.
-```sh
+# Weight&Biases login
 wandb login 
 ```
 
 ## Usage
-A pretrained model fine-tuning can be run using `train.py` and specifying:
+
+### Training
+A pretrained model fine-tuning can be run using `train.py` and specifying in the [config.yaml](config/config.yaml) file:
 - the `model` param from the following [string name](https://pytorch.org/vision/stable/models.html#table-of-all-available-classification-weights)
-- the `dataset.name` param from the following list: `cifar10`, `cifar100`, `caltech101`, `imagenet`, `oxford-iiit-pet`, `svhn`, `mnist`, `fashionmnist`
- 
+- the `dataset.name` param from the following list: `cifar10`, `cifar100`, `caltech101`, `imagenet`, `oxford-iiit-pet`, `svhn`, `mnist`, `fashionmnist`, `imagenette`, `intel_image`
 
 ```sh
 python train.py model=ResNet18_Weights.IMAGENET1K_V1 dataset.name=oxford-iiit-pet
 ```
 
-After fine-tuned a pre-trained model, you can reload it and evaluate its explainability by using `evaluate_method_acc.py`. Specify the following params:
+### Testing
+After fine-tuned a pre-trained model, you can reload it and evaluate it by using `test.py`. Specify the following params in the [config.yaml](config/config.yaml) file:
 - the `model` param from the following [string name](https://pytorch.org/vision/stable/models.html#table-of-all-available-classification-weights)
-- the `dataset.name` param from the following list: `cifar10`, `cifar100`, `caltech101`, `imagenet`, `oxford-iiit-pet`, `svhn`, `mnist`, `fashionmnist`
-- the `saliency.method` param from the following: `sidu`, `gradcam`, `lime`, `rise`.
-- the `checkpoint` param by choosing among the pretrained model checkpoints in the output folder. Pleas note, in the following example the `checkpoint` param is valued according the windows path format.
-
-Please note, `evaluate_method_acc.py` requires a target layer depending on the model and the saliency method. They are declared in `config\target_layers.yaml`. Edit this configuration file to set different target layers.
+- the `dataset.name` param from the following list: `cifar10`, `cifar100`, `caltech101`, `imagenet`, `oxford-iiit-pet`, `svhn`, `mnist`, `fashionmnist`, `imagenette`, `intel_image`
+- the `checkpoint` param by choosing among the pretrained model checkpoints in the checkpoint folder. Please note, in the following example the `checkpoint` param is valued according the windows path format.
 
 ```sh
-python evaluate_method_acc.py model=VGG11_Weights.IMAGENET1K_V1 dataset.name=cifar10 saliency.method=sidu checkpoint=outputs\VGG11\epoch\=0-step\=2500.ckpt
+python test.py model=VGG11_Weights.IMAGENET1K_V1 dataset.name=intel_image checkpoint=checkpoints\finetuned_VGG11_Weights.IMAGENET1K_V1intel_image\model-epoch\=13-val_loss\=1.12.ckpt
 ```
+In the test step, it is possible to obtain a confusion matrix, running the [confusion_matrix_generation.py](scripts/confusion_matrix_generation.py) script, specifying the same parameters mentioned above.
+
+### Generate saliency map
+After training and testing the model, you can generate the saliency maps using `generate_saliency.py`. Specify the following params in the [config.yaml](config/config.yaml) file:
+- the `model` param from the following [string name](https://pytorch.org/vision/stable/models.html#table-of-all-available-classification-weights)
+- the `dataset.name` param from the following list: `cifar10`, `cifar100`, `caltech101`, `imagenet`, `oxford-iiit-pet`, `svhn`, `mnist`, `fashionmnist`, `imagenette`, `intel_image`
+- the `checkpoint` param by choosing among the pretrained model checkpoints in the checkpoint folder. Please note, in the following example the `checkpoint` param is valued according the windows path format.
+- the `saliency.method` param from the following: `sidu`, `gradcam`, `lime`, `rise`, `lrp`.
+- the `saliency.dataset` boolean param in order to choose if produce the saliency map for all the image of the specified dataset (setting it to True), or only for a specified image (setting it to False). For this second possibility, the image has to be put in the [image](data/image) folder, specifying a parameter:
+    - the `saliency.file_image` param, in which you have to specify the name of the file in which the image is saved
+
+To generate the saliency maps for all the images of the specified dataset use the following command:
+```sh
+python generate_saliency.py model=VGG11_Weights.IMAGENET1K_V1 dataset.name=intel_image checkpoint=checkpoints\finetuned_VGG11_Weights.IMAGENET1K_V1intel_image\model-epoch\=13-val_loss\=1.12.ckpt saliency.method=lrp saliency.dataset=True
+```
+
+To generate the saliency map for the specified image, use the following command:
+```sh
+python generate_saliency.py model=VGG11_Weights.IMAGENET1K_V1 dataset.name=intel_image checkpoint=checkpoints\finetuned_VGG11_Weights.IMAGENET1K_V1intel_image\model-epoch\=13-val_loss\=1.12.ckpt saliency.method=lrp saliency.dataset=False saliency.file_image="bird.jpg"
+```
+
+### Extract concept
+To extract the concept from a specific dataset:
+- You can define the concepts for a specific dataset in a csv file `{dataset_name}_concepts.csv`, saved in the [concepts](data/concepts) folder, in which each row is of the type "class,concept1;concept2;...".
+- Then you can extract the concept using `extract_concept.py`, specifying the following params:
+  - the `modelSam` param from the following `GroundingDino`,`Florence2`
+  - the `dataset.name` param from the following list: `imagenette`, `intel_image`
+  - the `mask.dataset` boolean param in order to choose if extract the concepts for all the image of the specified dataset (setting it to True), or only for a specified image (setting it to False). For this second possibility, the image has to be put in the [image](data/image) folder, specifying two parameters:
+    - the `mask.concepts` param, in which you can put all the concepts that you want to extract, divided by a "/", like visible in the following example
+    - the `mask.file_image` param, in which you have to specify the name of the file in which the image is saved
+
+To extract concepts from all the images of the specified dataset, use the following command:
+```sh
+python extract_concept.py modelSam=GroundingDino dataset.name=intel_image mask.dataset=True 
+```
+To extract concepts from the specified image, use the following command:
+```sh
+python extract_concept.py modelSam=GroundingDino mask.dataset=False mask.concepts="bird/feathers/eyes" mask.file_image="bird.jpg" 
+```
+### WoE
+
 
