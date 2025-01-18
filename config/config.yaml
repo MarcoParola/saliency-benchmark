@@ -35,6 +35,11 @@ saliency:
   dataset: False
   file_image: "bird.jpg"
 
+woe:
+  dataset: True
+  classes: ['buildings','forest']
+  concepts: ['Vegetation', 'Wall','Facade']
+
 metrics:
   name: iou
   n_pixels: 500

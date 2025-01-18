@@ -28,19 +28,24 @@ def concept_average_saliency(mask, saliency):
 
     return cas
 
-def compute_total_woe_score(woe_gradcam, list_concepts, list_classes):
-    # compute total score for a single class for all the concepts
-    woe_score = torch.zeros(len(list_classes))
+def compute_single_woe_score(P_h_cp, P_h):
 
-    for label_id, label in enumerate(list_classes):
-        woe_label = 0
-        for concept_id, concept in enumerate(list_concepts):
-            #print(f"label:{label}, concept: {concept}")
-            #print(f"label_id:{label_id}, concept_id: {concept_id}")
-            woe_label = woe_label + woe_gradcam.compute_score(label_id, concept_id)
-        #print(f"woe total label:", woe_label)
-        woe_score[label_id] = woe_label
-    return woe_score
+    P_hneg_cp = 1 - P_h_cp
+
+    P_hneg = 1 - P_h
+
+    if P_h_cp == 0:
+        woe_h_cp = 0
+    else:
+        if P_h_cp == 1:
+            woe_h_cp = 1  # TODO is correct?
+        else:
+            if P_h != 0:
+                woe_h_cp = log(P_h_cp / P_hneg_cp) - log(P_h / P_hneg)
+            else:
+                woe_h_cp = log(P_h_cp / P_hneg_cp)
+    print("Woe_score_computed:", woe_h_cp)
+    return woe_h_cp
 
 class WeightOfEvidence:
 
@@ -80,6 +85,7 @@ class WeightOfEvidence:
         tensor_prob_path = os.path.join(output_dir,f"woe_prob_{saliency_method}_{dataset_name}.pth")
         if os.path.exists(tensor_prob_path):
             self.prob = torch.load(tensor_prob_path)
+            print(self.prob)
         else:
 
             # Compute P(h|cp) for each concept cp and for each class h, and saved each element in the matrix self.prob
@@ -118,35 +124,55 @@ class WeightOfEvidence:
                 os.makedirs(output_dir)
             torch.save(self.prob,os.path.join(output_dir,f"woe_prob_{saliency_method}_{dataset_name}.pth"))
 
-    def compute_score(self, label, concept):
+    # def compute_score_all_dataset(self):
+    #
+    #     # compute total score for a single class for all the concepts
+    #     woe_score = torch.zeros(len(self.dataset.classes))
+    #
+    #     for label_id, label in enumerate(self.dataset.classes):
+    #         woe_label = 0
+    #         for concept_id, concept in enumerate(self.list_concepts):
+    #             P_h_cp = self.prob[concept_id, label_id]
+    #
+    #             # Count of number of images belonging to class "label" in the dataset and then divided by total number of image,
+    #             # to retrieve the probability to belong to a certain class
+    #             P_h = self.saliency_info["True Class"].value_counts().get(label_id) / self.dataset.__len__()
+    #             woe_label = woe_label + compute_single_woe_score(P_h_cp, P_h)
+    #         # print(f"woe total label:", woe_label)
+    #         woe_score[label_id] = woe_label
+    #     return woe_score
 
-        P_h_cp = self.prob[concept, label]
+    def compute_score(self, concepts_specified, labels_specified):
 
-        # Count of number of images belonging to class "label" in the dataset and then divided by total number of image,
-        # to retrieve the probability to belong to a certain class
-        P_h = self.saliency_info["True Class"].value_counts().get(label)/self.dataset.__len__()
+        # compute total score for each class specified by the user
+        woe_score = torch.zeros(len(labels_specified))
 
-        #print(self.prob)
+        for label_id, label in enumerate(self.dataset.classes):
 
-        #print(f"P_h_cp{P_h_cp}, P_h{P_h}")
-        #print(self.prob[concept].sum())
+            if label not in labels_specified:
+                print(f"label {label} not in list {labels_specified}")
+                continue
 
-        P_hneg_cp = 1 - P_h_cp
+            woe_label = 0
+            for concept_id, concept in enumerate(self.list_concepts):
 
-        P_hneg = 1 - P_h
+                if concept not in concepts_specified:
+                    print(f"concept {concept} not in list {concepts_specified}")
+                    continue
 
-        if P_h_cp == 0:
-            woe_h_cp = 0
-        else:
-            if P_h_cp == 1:
-                woe_h_cp = 1 #TODO is correct?
-            else:
-                if P_h != 0:
-                    woe_h_cp = log(P_h_cp/P_hneg_cp) - log(P_h/P_hneg)
-                else:
-                    woe_h_cp = log(P_h_cp/P_hneg_cp)
-        print("Woe_score_computed:", woe_h_cp)
-        return woe_h_cp
+                P_h_cp = self.prob[concept_id, label_id]
+
+                # Count of number of images belonging to class "label" in the dataset and then divided
+                # by total number of image, to retrieve the probability to belong to a certain class
+                P_h = self.saliency_info["True Class"].value_counts().get(label_id) / self.dataset.__len__()
+                woe_label = woe_label + compute_single_woe_score(P_h_cp, P_h)
+            # print(f"woe total label:", woe_label)
+            woe_score[label_id] = woe_label
+        return woe_score
+
+
+
+
 
 if __name__ == "__main__":
     dataset_name = "intel_image"
@@ -166,15 +192,17 @@ if __name__ == "__main__":
     dir = os.path.join(absolute_path, dataset_name)
 
     list_concepts = load_list(os.path.join(dir, 'list_concepts.txt'))
+    print(list_concepts)
 
     list_classes = test.classes
+    print(list_classes)
 
     # Compute woe score for each class
 
-    woe_gradcam_score = compute_total_woe_score(woe_gradcam, list_concepts, list_classes)
+    woe_gradcam_score = woe_gradcam.compute_score(list_concepts, list_classes)
     #woe_lrp_score = compute_total_woe_score(woe_lrp, list_concepts, list_classes)
-    woe_sidu_score = compute_total_woe_score(woe_sidu, list_concepts, list_classes)
-    woe_lime_score = compute_total_woe_score(woe_lime,list_concepts,list_classes)
+    woe_sidu_score = woe_sidu.compute_score(list_concepts, list_classes)
+    woe_lime_score = woe_lime.compute_score(list_concepts, list_classes)
 
     print(woe_gradcam_score)
     print(woe_sidu_score)
