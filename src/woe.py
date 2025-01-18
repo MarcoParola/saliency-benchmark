@@ -77,9 +77,6 @@ class WeightOfEvidence:
         self.dir_mask = os.path.join(dir, 'masks')
         self.dir_concept = os.path.join(dir, 'concepts')
 
-        #self.masks = sorted([f for f in os.listdir(dir_mask) if os.path.isfile(os.path.join(dir_mask, f))])
-        #self.concepts = sorted([f for f in os.listdir(dir_concept) if os.path.isfile(os.path.join(dir_concept, f))])
-
         # Check if the tensor with the probabilities has been already computed
         output_dir = os.path.abspath('woe_probabilities')
         tensor_prob_path = os.path.join(output_dir,f"woe_prob_{saliency_method}_{dataset_name}.pth")
@@ -124,24 +121,6 @@ class WeightOfEvidence:
                 os.makedirs(output_dir)
             torch.save(self.prob,os.path.join(output_dir,f"woe_prob_{saliency_method}_{dataset_name}.pth"))
 
-    # def compute_score_all_dataset(self):
-    #
-    #     # compute total score for a single class for all the concepts
-    #     woe_score = torch.zeros(len(self.dataset.classes))
-    #
-    #     for label_id, label in enumerate(self.dataset.classes):
-    #         woe_label = 0
-    #         for concept_id, concept in enumerate(self.list_concepts):
-    #             P_h_cp = self.prob[concept_id, label_id]
-    #
-    #             # Count of number of images belonging to class "label" in the dataset and then divided by total number of image,
-    #             # to retrieve the probability to belong to a certain class
-    #             P_h = self.saliency_info["True Class"].value_counts().get(label_id) / self.dataset.__len__()
-    #             woe_label = woe_label + compute_single_woe_score(P_h_cp, P_h)
-    #         # print(f"woe total label:", woe_label)
-    #         woe_score[label_id] = woe_label
-    #     return woe_score
-
     def compute_score(self, concepts_specified, labels_specified):
 
         # compute total score for each class specified by the user
@@ -166,7 +145,7 @@ class WeightOfEvidence:
                 # by total number of image, to retrieve the probability to belong to a certain class
                 P_h = self.saliency_info["True Class"].value_counts().get(label_id) / self.dataset.__len__()
                 woe_label = woe_label + compute_single_woe_score(P_h_cp, P_h)
-            # print(f"woe total label:", woe_label)
+
             woe_score[label_id] = woe_label
         return woe_score
 

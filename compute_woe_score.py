@@ -32,10 +32,8 @@ def main(cfg):
         dir = os.path.join(absolute_path, dataset_name)
 
         list_concepts = load_list(os.path.join(dir, 'list_concepts.txt'))
-        print(f"list concepts: {list_concepts}")
 
         list_classes = test.classes
-        print(f"list classes: {list_classes}")
 
     else:
         # Only for a specified subset of classes and concepts
@@ -43,6 +41,8 @@ def main(cfg):
         list_classes = cfg.woe.classes
 
     # Compute woe score for each class
+    print(f"list concepts: {list_concepts}")
+    print(f"list classes: {list_classes}")
 
     woe_gradcam_score = woe_gradcam.compute_score(list_concepts, list_classes)
     # woe_lrp_score = compute_total_woe_score(woe_lrp, list_concepts, list_classes)
@@ -69,4 +69,3 @@ def main(cfg):
 
 if __name__ == '__main__':
     main()
-    
