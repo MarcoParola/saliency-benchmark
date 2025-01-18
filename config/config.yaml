@@ -15,7 +15,7 @@ datasetDet:
 
 model: VGG11_Weights.IMAGENET1K_V1
 seed: 42
-checkpoint: checkpoints\finetuned_VGG11_Weights.IMAGENET1K_V1intel_image\model-epoch=13-val_loss=1.12.ckpt
+checkpoint: checkpoints\finetuned_VGG11_intel_image.ckpt
 
 dataset: 
   name: intel_image

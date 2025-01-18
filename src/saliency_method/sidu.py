@@ -57,9 +57,9 @@ def main(cfg):
     if save_images:
         # Create directory to save saliency maps
         finetune = "finetuned_" if cfg.train.finetune else "no_finetuned_"
-        output_dir_images = os.path.join(cfg.mainDir, 'saliency_output/SIDU_saliency_maps_images',
+        output_dir_images = os.path.join(cfg.mainDir, 'saliency_output/sidu_saliency_maps_images',
                                          finetune + cfg.model + cfg.dataset.name)
-        output_dir_tensors = os.path.join(cfg.mainDir, 'saliency_output/SIDU_saliency_maps_tensors',
+        output_dir_tensors = os.path.join(cfg.mainDir, 'saliency_output/sidu_saliency_maps_tensors',
                                           finetune + cfg.model + cfg.dataset.name)
         os.makedirs(output_dir_images, exist_ok=True)
         os.makedirs(output_dir_tensors, exist_ok=True)

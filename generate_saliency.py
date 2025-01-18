@@ -74,7 +74,6 @@ def main(cfg):
             _, preds = torch.max(outputs, 1)
 
             # Generate saliency maps
-            #TODO faccio così o standardizzo tutte le funzioni generate_saliency inserendo batch e resize?
             if cfg.saliency.method == "rise":
                 saliency_maps = saliency_method.generate_saliency(images, preds)
             elif cfg.saliency.method == "lrp":
