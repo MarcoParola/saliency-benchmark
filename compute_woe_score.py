@@ -3,6 +3,7 @@ import os
 import hydra
 import numpy as np
 
+from scripts import saliency_info_generation
 from src.datasets.classification import load_classification_dataset
 from src.utils import load_list
 from src.woe import WeightOfEvidence
@@ -17,19 +18,28 @@ def main(cfg):
     data_dir = os.path.join(cfg.mainDir, cfg.dataset.path)
     train, val, test = load_classification_dataset(dataset_name, data_dir, cfg.dataset.resize)
 
+    # Retrieve saliency maps info
+
+    output_dir_csv = os.path.join(os.path.abspath('saliency_info'), model)
+
+    output_csv = os.path.join(output_dir_csv, f'saliency_info_{dataset_name}.csv')
+
+    if not os.path.exists(output_csv):
+        saliency_info_generation.main(cfg)
+
     saliency_methods = ['gradcam', 'sidu', 'lime']
 
-    woe_gradcam = WeightOfEvidence(test, dataset_name, model, saliency_methods[0], 'GroundingDino')
+    woe_gradcam = WeightOfEvidence(test, dataset_name, model, saliency_methods[0], cfg.modelSam)
     # woe_lrp = WeightOfEvidence(test, dataset_name, model, 'lrp', 'GroundingDino')
-    woe_sidu = WeightOfEvidence(test, dataset_name, model, saliency_methods[1], 'GroundingDino')
-    woe_lime = WeightOfEvidence(test, dataset_name, model, saliency_methods[2], 'GroundingDino')
+    woe_sidu = WeightOfEvidence(test, dataset_name, model, saliency_methods[1], cfg.modelSam)
+    woe_lime = WeightOfEvidence(test, dataset_name, model, saliency_methods[2], cfg.modelSam)
 
     if cfg.woe.dataset == True:
 
         # Su tutto il dataset
         absolute_path = os.path.abspath("mask_output")
 
-        dir = os.path.join(absolute_path, dataset_name)
+        dir = os.path.join(absolute_path, cfg.modelSam, dataset_name)
 
         list_concepts = load_list(os.path.join(dir, 'list_concepts.txt'))
 

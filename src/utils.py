@@ -375,6 +375,22 @@ def retrieve_concepts(dataset_name):
     print("Caption:", caption)
     return caption
 
+def retrieve_concepts_ordered(dataset_name):
+    # Initialize an empty list to store concepts
+    all_concepts = []
+
+    absolute_path = os.path.abspath("data")
+
+    # Read the CSV file
+    with open(os.path.join(absolute_path, 'concepts', dataset_name + "_concepts.csv"), mode="r") as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            print(row)
+            # Split the concepts in the current row and extend the list
+            concepts = row["concepts"].split(";")
+            all_concepts.extend(concepts)
+
+    return all_concepts
 
 if __name__ == "__main__":
 
