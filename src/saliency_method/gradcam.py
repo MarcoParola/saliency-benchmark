@@ -79,8 +79,8 @@ def main(cfg):
     if save_images:
         # Create directory to save saliency maps
         finetune = "finetuned_" if cfg.train.finetune else "no_finetuned_"
-        output_dir_images = os.path.join(cfg.mainDir, 'saliency_output/gradCam_saliency_maps_images', finetune + cfg.model + cfg.dataset.name)
-        output_dir_tensors = os.path.join(cfg.mainDir, 'saliency_output/gradCam_saliency_maps_tensors', finetune + cfg.model + cfg.dataset.name)
+        output_dir_images = os.path.join(cfg.mainDir, 'saliency_output/gradcam_saliency_maps_images', finetune + cfg.model + cfg.dataset.name)
+        output_dir_tensors = os.path.join(cfg.mainDir, 'saliency_output/gradcam_saliency_maps_tensors', finetune + cfg.model + cfg.dataset.name)
         os.makedirs(output_dir_images, exist_ok=True)
         os.makedirs(output_dir_tensors, exist_ok=True)
 
@@ -91,8 +91,8 @@ def main(cfg):
     image_count = 0
 
     for images, labels in dataloader:
-        # if image_count >= 5:
-        #     break
+        if image_count >= 1:
+             break
 
         images = images.to(device)
 
@@ -100,17 +100,23 @@ def main(cfg):
         outputs = model(images)
         _, preds = torch.max(outputs, 1)
 
+        print(images.dtype)
+        print(type(images))
+        print(images.shape)
+
         # Generate saliency maps
         saliency_maps = method.generate_saliency(input_images=images, target_layer=target_layers_name)
 
         for i in range(images.size(0)): #i-th images of the batch
-            # if image_count >= 5:
-            #     break
+            if image_count >= 1:
+                 break
             print(image_count)
 
             image = images[i]
             image = image.cpu()
             saliency = saliency_maps[i]
+            print("main")
+            print(saliency.shape)
             predicted_class = preds[i]
             true_class = labels[i]
 

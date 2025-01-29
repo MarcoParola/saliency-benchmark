@@ -38,7 +38,7 @@ def main(cfg):
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
 
-        save_list(os.path.join(output_folder,'list_classes.txt'), model.ontology.classes())
+        save_list(os.path.join(output_folder,'list_concepts.txt'), model.ontology.classes())
 
         for idx in range(dataset.__len__()):
             print("IMG " + str(idx))
@@ -57,7 +57,7 @@ def main(cfg):
                 # save_images_with_mask_for_all_concepts(image, masks, model, boxes)  #to print all the class masks, even if not present
                 # plot_grid_masks(image, masks, model.ontology.classes(), idx)
                 output_dir_tensors = os.path.join(output_folder,'masks')
-                output_dir_classes = os.path.join(output_folder,'classes')
+                output_dir_classes = os.path.join(output_folder,'concepts')
                 if not os.path.exists(output_dir_tensors):
                     os.makedirs(output_dir_tensors)
                 if not os.path.exists(output_dir_classes):

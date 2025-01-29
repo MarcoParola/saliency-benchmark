@@ -181,3 +181,4 @@ images_labeled/
 confusion_matrices
 histograms
 mask_output
+saliency_info

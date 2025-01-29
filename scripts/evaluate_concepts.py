@@ -46,7 +46,7 @@ def main(cfg):
 
     dir = os.path.join(absolute_path, cfg.dataset.name)
 
-    list_concepts = load_list(os.path.join(dir, 'list_classes.txt'))
+    list_concepts = load_list(os.path.join(dir, 'list_concepts.txt'))
     #print(list_concepts)
     n_concepts = len(list_concepts)
 
@@ -65,7 +65,7 @@ def main(cfg):
     # Construct the matrix with each percentage
     for i in range(dataset.__len__()):
         masks = load_mask(os.path.join(dir,'masks',f'mask_{i}.pth'))
-        concepts = load_mask(os.path.join(dir,'classes',f'classes_{i}.pth'))
+        concepts = load_mask(os.path.join(dir,'concepts',f'classes_{i}.pth'))
         image,label = dataset.__getitem__(i)
         counter_classes[label] += 1
         for mask,concept in zip(masks,concepts):
