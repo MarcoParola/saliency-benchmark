@@ -215,6 +215,7 @@ class WeightOfEvidence:
                 # Count of number of images belonging to class "label" in the dataset and then divided
                 # by total number of image, to retrieve the probability to belong to a certain class
                 P_h = self.saliency_info["True Class"].value_counts().iloc[label_id] / self.dataset.__len__()
+                P_h = self.saliency_info["Predicted Class"].value_counts().iloc[label_id] / self.dataset.__len__()
                 woe_label = woe_label + compute_single_woe_score(P_h_cp, P_h)
 
             woe_score[label_id] = woe_label

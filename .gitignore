@@ -185,3 +185,5 @@ saliency_info
 saliency_info_back
 woe_prob
 mask_output_back
+woe_prob_true_class
+woe_probabilities
