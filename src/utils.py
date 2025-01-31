@@ -392,6 +392,28 @@ def retrieve_concepts_ordered(dataset_name):
 
     return all_concepts
 
+def retrieve_concepts_for_class(class_name, dataset_name):
+
+    concepts = []
+
+    # Load the CSV file
+    df = pd.read_csv(os.path.join(os.path.abspath('data'),'concepts',f'{dataset_name}_concepts_favor_against.csv'))
+
+    # Extract the row corresponding to the class
+    row = df[df["class"].str.lower() == class_name.lower()]
+    print(row)
+
+    # Get the values of concept_favor and concept_against
+    if not row.empty:
+        concept_favor = row["concept_favor"].item().split(";")
+        concept_against = row["concept_against"].item().split(";")
+        concepts.extend(concept_favor)
+        concepts.extend(concept_against)
+    else:
+        print("Class not found.")
+
+    return concepts
+
 if __name__ == "__main__":
 
     data = [

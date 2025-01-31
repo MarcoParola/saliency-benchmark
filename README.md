@@ -1,92 +1,25 @@
 # saliency-benchmark
-Repository for benchmarking different post-hoc XAI explanation methods on image datasets. Here is a quick guide on how to install and use the repo. More information about installation and usage can be found in the [documentation](docs/README.md).
+Repository for benchmarking different post-hoc XAI explanation methods on image datasets.
 
-## Install
-To install the project, follow these steps:
+## Install and Usage
+To install and use the project, follow the step explained in the [documentation](docs/README.md).
 
-1. **Clone the repository:**
+For a rapid trial, you can fine the extracted masks, the saliency maps computed for each method, the checkpoints of the trained models and the necessary probabilities for weight of evidence computation in the drive at the following [link](https://drive.google.com/drive/folders/1wjHDtH7-IyGBJVbL-XrJ14B5YB9azHmU?usp=sharing) 
 
-    ```bash
-    git clone https://github.com/yourusername/saliency-benchmark.git
-    ```
+## Prediction and saliency map
 
-2. **Navigate to the project directory:**
+#### ResNet model
 
-    ```bash
-    cd saliency-benchmark
-    ```
+| Prediction | Image                                             | GradCAM                                                | LIME                                                | RISE                                                | SIDU                                                |
+|------------|---------------------------------------------------|--------------------------------------------------------|-----------------------------------------------------|-----------------------------------------------------|-----------------------------------------------------|
+| Golf ball  | ![](./saliency_image_example/image_golf_ball.png) | ![](./saliency_image_example/ResNet_imagenette_gradcam.png) | ![](./saliency_image_example/ResNet_imagenette_lime.png) | ![](./saliency_image_example/ResNet_imagenette_rise.png) | ![](./saliency_image_example/ResNet_imagenette_sidu.png) |
+| Glacier    | ![](./saliency_image_example/image_glacier.png)   | ![](./saliency_image_example/ResNet_intel_gradcam.png) | ![](./saliency_image_example/ResNet_intel_lime.png) | ![](./saliency_image_example/ResNet_intel_rise.png) | ![](./saliency_image_example/ResNet_intel_sidu.png) |
 
-3. **Create a virtual environment:**
 
-    ```bash
-    python -m venv env
-    ```
 
-4. **Activate the virtual environment:**
+#### VGG model
 
-    ```bash
-    env/Scripts/activate
-    ```
-
-5. **Install the dependencies:**
-
-    ```bash
-    ./setup.bat
-    ```
-
-These steps will set up your working environment, install necessary dependencies, and prepare you to run the project.
-
-## Training
-
-To train the networks using this repository, use the following command:
-
-```bash
-python3 train.py model=VGG11_Weights.IMAGENET1K_V1 dataset.name=cifar10 train.finetune=True
-```
-- `model`: Specifies the pre-trained model to use. The full list of available models can be found [here](https://pytorch.org/vision/stable/models.html#table-of-all-available-classification)
-
-- `dataset.name`: Specifies the dataset to use. The supported datasets are:
-    - `cifar10`
-    - `cifar100`
-    - `caltech101`
-    - `mnist`
-    - `svhn`
-    - `oxford-iiit-pet`
-  
-- `train.finetune`: Determines the training mode.
-    - `True`: Fine-tunes the entire model.
-    - `False`: Uses the model as a feature extractor.
-
-These parameters allow you to customize the training process according to your specific requirements. For a detailed configuration, you may refer to or modify the train section of the [config.yaml](config/config.yaml) file according to your specific requirements.
-
-## Testing 
-
-To evaluate the trained model, use the following command:
-
-```bash
-python3 test.py
-```
-You need to specify the following parameters in the [config.yaml](config/config.yaml) file:
-- `model`: The pre-trained model to use.
-- `dataset.name`: The dataset used for testing.
-- `checkpoint`: Path to the model checkpoint. Choose from the model checkpoints available in the **checkpoints** folder.
-
-## Evaluate Explainability 
-
-After training and testing the model you can evaluate the explainability of the model by using the following command: 
-```bash
-python3 evaluate/evaluate_saliency.py
-```
-You need to specify the following parameters in the [config.yaml](config/config.yaml) file:
-- `model`: The pre-trained model to use.
-- `dataset.name`: The dataset used for testing.
-- `checkpoint`: Path to the model checkpoint. Choose from the model checkpoints available in the **checkpoints** folder.
-- `saliency.method`: Saliency method used for evaluating the model's explanations. The supported methods are: `gradcam`, `rise`, `sidu`, `lime`.
-- `metrics.output_file`: Specifies the file name for saving the evaluation metrics.
-
-## Evaluate Detection
-
-You can evaluate the object detection method by using the following command:
-```bash
-python3 evaluate/evaluate_detector.py
-```
+| Prediction | Image                                             | GradCAM                                                  | LIME                                                | RISE                                                | SIDU                                                |
+|------------|---------------------------------------------------|----------------------------------------------------------|-----------------------------------------------------|-----------------------------------------------------|-----------------------------------------------------|
+| Golf ball  | ![](./saliency_image_example/image_golf_ball.png) | ![](./saliency_image_example/VGG_imagenette_gradcam.png) | ![](./saliency_image_example/VGG_imagenette_lime.png) | ![](./saliency_image_example/VGG_imagenette_rise.png) | ![](./saliency_image_example/VGG_imagenette_sidu.png) |
+| Glacier    | ![](./saliency_image_example/image_glacier.png)   | ![](./saliency_image_example/VGG_intel_gradcam.png)   | ![](./saliency_image_example/VGG_intel_lime.png) | ![](./saliency_image_example/VGG_intel_rise.png) | ![](./saliency_image_example/VGG_intel_sidu.png) |

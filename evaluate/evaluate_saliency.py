@@ -97,7 +97,9 @@ def main(cfg):
     # print(f'AUC Deletion Score: {avg_auc_del_score}')
 
     # Save results to file
-    output_file = os.path.join(cfg.currentDir, cfg.metrics.output_file)
+    finetune = "finetuned_" if cfg.train.finetune else "no_finetuned_"
+    name_file = f"{finetune}_{cfg.model}_{cfg.dataset.name}_{cfg.saliency.method}.txt"
+    output_file = os.path.join(cfg.currentDir, name_file)
     with open(output_file, 'w') as f:
         f.write(f'AUC Insertion Score: {avg_auc_ins_score}\n')
         f.write(f'AUC Deletion Score: {avg_auc_del_score}\n')

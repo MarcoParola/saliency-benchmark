@@ -46,7 +46,7 @@ After training and testing the model, you can generate the saliency maps using `
 - the `model` param from the following [string name](https://pytorch.org/vision/stable/models.html#table-of-all-available-classification-weights)
 - the `dataset.name` param from the following list: `cifar10`, `cifar100`, `caltech101`, `imagenet`, `oxford-iiit-pet`, `svhn`, `mnist`, `fashionmnist`, `imagenette`, `intel_image`
 - the `checkpoint` param by choosing among the pretrained model checkpoints in the checkpoint folder. Please note, in the following example the `checkpoint` param is valued according the windows path format.
-- the `saliency.method` param from the following: `sidu`, `gradcam`, `lime`, `rise`, `lrp`.
+- the `saliency.method` param from the following: `sidu`, `gradcam`, `lime`, `rise`.
 - the `saliency.dataset` boolean param in order to choose if produce the saliency map for all the image of the specified dataset (setting it to True), or only for a specified image (setting it to False). For this second possibility, the image has to be put in the [image](data/image) folder, specifying a parameter:
     - the `saliency.file_image` param, in which you have to specify the name of the file in which the image is saved
 
@@ -76,8 +76,31 @@ python extract_concept.py modelSam=GroundingDino dataset.name=intel_image mask.d
 ```
 To extract concepts from the specified image, use the following command:
 ```sh
-python extract_concept.py modelSam=GroundingDino mask.dataset=False mask.concepts="bird/feathers/eyes" mask.file_image="bird.jpg" 
+python extract_concept.py modelSam=GroundingDino mask.dataset=False mask.concepts="beak/feathers/eyes" mask.file_image="bird.jpg" 
 ```
-### WoE
+### Weight of Evidence
+You can compute weight of evidence score using file `evaluate/ablation_study.py`, to produce the weight of evidence score for a specific combination of model and methods you have to specify the following parameters:
+- the `model` param from the following [string name](https://pytorch.org/vision/stable/models.html#table-of-all-available-classification-weights)
+- the `dataset.name` param from the following list: `imagenette`, `intel_image`
+- the `checkpoint` param by choosing among the pretrained model checkpoints in the checkpoint folder. Please note, in the following example the `checkpoint` param is valued according the windows path format.
+- the `saliency.method` param from the following: `sidu`, `gradcam`, `lime`, `rise`.
+- the `modelSam` param from the following `GroundingDino`,`Florence2`
+- the `woe.concept_presence_method` param from the following `cas`, `iou`, `casp`
+
+To produce woe score considering each classes of the dataset and each concepts defined, use the following command:
+```sh
+python -m evaluate.ablation_study model=ResNet18_Weights.IMAGENET1K_V1 dataset.name=imagenette modelSam=GroundingDino saliency.method=gradcam checkpoint=checkpoints\finetuned_ResNet_imagenette.ckpt woe.concept_presence_method=cas
+```
 
 
+### Fidelity metrics for saliency map
+
+You can evaluate the explainability of the model by using fidelity metrics the following command: 
+```bash
+python3 evaluate/evaluate_saliency.py
+```
+You need to specify the following parameters in the [config.yaml](config/config.yaml) file:
+- `model`: The pre-trained model to use.
+- `dataset.name`: The dataset used for testing.
+- `checkpoint`: Path to the model checkpoint. Choose from the model checkpoints available in the **checkpoints** folder.
+- `saliency.method`: Saliency method used for evaluating the model's explanations. The supported methods are: `gradcam`, `rise`, `sidu`, `lime`.

@@ -39,11 +39,11 @@ woe:
   dataset: True
   classes: ['buildings','forest']
   concepts: ['Vegetation', 'Wall','Facade']
+  concept_presence_method: iou
 
 metrics:
   name: iou
   n_pixels: 500
-  output_file: "finetuned_ResNet50_cifar10_gradcam.txt"
 
 train:
   batch_size: 1
