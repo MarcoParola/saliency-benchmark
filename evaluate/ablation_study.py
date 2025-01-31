@@ -14,12 +14,10 @@ from src.woe import WeightOfEvidence
 @hydra.main(config_path='../config', config_name='config', version_base=None)
 def main(cfg):
 
-    #loggers = get_loggers(cfg)
-
     dataset_name = cfg.dataset.name
     model = cfg.model
     # Load test dataset
-    data_dir = os.path.join(cfg.mainDir, cfg.dataset.path)
+    data_dir = os.path.join(cfg.currentDir, cfg.dataset.path)
     train, val, test = load_classification_dataset(dataset_name, data_dir, cfg.dataset.resize)
 
     # Retrieve saliency maps info
@@ -31,36 +29,21 @@ def main(cfg):
     if not os.path.exists(output_csv):
         saliency_info_generation.main(cfg) # It will be read in the WeightOfEvidence class
 
-    woe = WeightOfEvidence(test, dataset_name, model, cfg.saliency.method, cfg.modelSam)
+    woe = WeightOfEvidence(test, dataset_name, model, cfg.saliency.method, cfg.modelSam, cfg.woe.concept_presence_method)
 
-
-    # Su tutto il dataset
-    absolute_path = os.path.abspath("mask_output")
-
-    dir = os.path.join(absolute_path, cfg.modelSam, dataset_name)
-
-    #list_concepts = load_list(os.path.join(dir, 'list_concepts.txt'))
     list_concepts = retrieve_concepts_ordered(cfg.dataset.name)
 
     list_classes = test.classes
 
     # Compute woe score for each class
-    #print(f"list concepts: {list_concepts}")
-    print(f"list classes: {list_classes}")
 
     woe_score = woe.compute_score(list_concepts, list_classes)
 
-    # Log Woe Score and other details to W&B
-    # wandb.log({
-    #     "Dataset": cfg.dataset.name,
-    #     "Model": str(cfg.model),
-    #     "Saliency Method": str(cfg.saliency.method),
-    #     "Model SAM": str(cfg.modelSam),
-    #     "Woe Score": woe_score
-    # })
+    output_folder = os.path.abspath('ablation_results')
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
 
-
-    file_name = "ablation_study_result.txt"
+    file_name = os.path.join(output_folder,f"ablation_study_result_{cfg.woe.concept_presence_method}.txt")
 
     with open(file_name, "a") as file:
         print("printing on file")
