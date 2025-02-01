@@ -55,17 +55,9 @@ def main(cfg):
         for label in list_classes:
             list_concepts = retrieve_concepts_for_class(label, dataset_name)
 
-            print("List concepts:", list_concepts)
-
             score_class = woe.compute_score(list_concepts, list_classes)
 
-            print("SERIE SCORE", score_class)
-            print("WOE SCORE PRE: ", woe_score)
-
             woe_score[test.classes.index(label)] = score_class[test.classes.index(label)]
-
-            print("WOE SCORE DOPO: ", woe_score)
-
             file_name = os.path.join(output_folder,
                                      f"ablation_study_result_{cfg.woe.concept_presence_method}_favor_against_concepts.txt")
     else:
@@ -75,10 +67,10 @@ def main(cfg):
         file_name = os.path.join(output_folder,f"ablation_study_result_{cfg.woe.concept_presence_method}.txt")
 
     with open(file_name, "a") as file:
-        print("printing on file")
         file.write(
             "------------------------------------------------TEST----------------------------------------------------------------------------------\n")
         file.write("Dataset:" + str(cfg.dataset.name) + "\n")
+        file.write("All classes and all concept used? " + str(cfg.woe.dataset) +"\n")
         file.write("Modello:" + str(cfg.model) + "\n")
         file.write("Saliency method:" + str(cfg.saliency.method) + "\n")
         file.write("Modello SAM:" + str(cfg.modelSam) + "\n")

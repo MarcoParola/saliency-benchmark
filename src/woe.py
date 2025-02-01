@@ -31,18 +31,16 @@ def compute_single_woe_score(P_h_cp, P_h):
 
 def compute_probability(occ, row_occ_concept_id, label_id, concept_id):
 
-    print("Row occ: ", row_occ_concept_id) # It contains the row of the specified concept, but with only the cells regarding the labels_specified
+    #print("Row occ: ", row_occ_concept_id) # It contains the row of the specified concept, but with only the cells regarding the labels_specified
 
     # Compute probability of class h, in set of class labels_specified, given concept positioned in row concept_id of occurrences matrix
     occ_cp_h = occ.iloc[concept_id, label_id]
-
-    print("cell:", occ_cp_h)
 
     sum_cell_cp_labels_specified = row_occ_concept_id.sum()
 
     P_h_cp = occ_cp_h/sum_cell_cp_labels_specified
 
-    print("Prob", P_h_cp)
+    #print("Prob", P_h_cp)
 
     return P_h_cp
 
@@ -100,13 +98,10 @@ class WeightOfEvidence:
                 print("IMG " + str(idx))
                 # Get the ground truth bounding boxes and labels
                 image, label = self.dataset.__getitem__(idx)
-                print(f"label: {label}")
 
                 # Retrieve mask
                 masks = load_mask(os.path.join(self.dir_mask, f'mask_{idx}.pth'))
-                #concepts = load_mask(os.path.join(self.dir_concept, f'classes_{idx}.pth'))
-                print(f"maschera shape:{masks.shape}")
-                #print(concepts.shape)
+
                 # Retrieve saliency
                 row_sal_info = self.saliency_info.iloc[idx]
                 path_sal = row_sal_info[self.saliency_method + " path"]
@@ -118,8 +113,6 @@ class WeightOfEvidence:
                     #Apply thresholding to concept presence computed
                     #concept_presence = 1 if concept_presence_compute(concept_presence_method, mask, saliency) > 0.5 else 0
                     concept_presence = concept_presence_compute(concept_presence_method, mask, saliency)
-
-                    print(f"Presence in input {i} : {concept_presence}")
 
                     self.occ.loc[concept, self.dataset.classes[label]] += concept_presence  # increment occurrences for cell (concept,class)
 
@@ -145,12 +138,6 @@ class WeightOfEvidence:
                 if concept not in concepts_specified:
                     #print(f"concept {concept} not in list {concepts_specified}")
                     continue
-
-                #occ_h_cp = self.occ.iloc[concept_id, label_id]
-
-                print("concept:", concept)
-                print(labels_specified)
-                print("riga:",self.occ.loc[concept, labels_specified])
 
                 P_h_cp = compute_probability(self.occ, self.occ.loc[concept, labels_specified], label_id, concept_id)
 

@@ -8,7 +8,7 @@ currentDir: ${hydra:runtime.cwd}
 mainDir: C:\Users\matte\Github\saliency-benchmark
 
 modelDet: GroundedSam2
-modelSam: GroundingDino
+modelSam: Florence2
 
 datasetDet:
   name: coco2017
@@ -26,27 +26,28 @@ visualize:
   save_images: true
 
 mask:
-  dataset: False
+  dataset: True
   concepts: "Beak/Feathers/Eyes"
   file_image: "bird.jpg"
 
 saliency:
-  method: gradcam
+  method: lime
   dataset: False
   file_image: "bird.jpg"
 
 woe:
   dataset: True
-  classes: ['buildings','forest']
-  concepts: ['Vegetation', 'Wall','Facade']
+  classes: ['English springer', 'cassette player', 'church', 'garbage truck', 'gas pump', 'parachute']
+  concepts: ['Ears', 'Muzzle','Digital display','Facade','Bell Tower','Cab','Wheel','Tank','Canopy']
   concept_presence_method: iou
+  concept_favor_against: False
 
 metrics:
   name: iou
   n_pixels: 500
 
 train:
-  batch_size: 1
+  batch_size: 32
   max_epochs: 20
   lr: 1e-6
   weight_decay: 5e-4
