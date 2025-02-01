@@ -2,12 +2,13 @@ import os
 
 import hydra
 import numpy as np
+import torch
 import wandb
 
 from scripts import saliency_info_generation
 from src.datasets.classification import load_classification_dataset
 from src.log import get_loggers
-from src.utils import load_list, retrieve_concepts_ordered
+from src.utils import load_list, retrieve_concepts_ordered, retrieve_concepts_for_class
 from src.woe import WeightOfEvidence
 
 
@@ -31,19 +32,47 @@ def main(cfg):
 
     woe = WeightOfEvidence(test, dataset_name, model, cfg.saliency.method, cfg.modelSam, cfg.woe.concept_presence_method)
 
-    list_concepts = retrieve_concepts_ordered(cfg.dataset.name)
-
-    list_classes = test.classes
-
-    # Compute woe score for each class
-
-    woe_score = woe.compute_score(list_concepts, list_classes)
+    if cfg.woe.dataset == True:
+                # Su tutto il dataset e con tutti i concetti
+                list_concepts = retrieve_concepts_ordered(cfg.dataset.name)
+                list_classes = test.classes
+    #
+    else:
+                # Only for a specified subset of classes and concepts
+                list_concepts = cfg.woe.concepts
+                list_classes = cfg.woe.classes
 
     output_folder = os.path.abspath('ablation_results')
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
-    file_name = os.path.join(output_folder,f"ablation_study_result_{cfg.woe.concept_presence_method}.txt")
+    # Compute woe score for each class
+
+    if cfg.woe.concept_favor_against == True:
+        # In this case we are analyzing for each class only a subset of concepts that are balanced in concept in favor of the class and concept against the class
+        woe_score = torch.zeros(len(test.classes))
+
+        for label in list_classes:
+            list_concepts = retrieve_concepts_for_class(label, dataset_name)
+
+            print("List concepts:", list_concepts)
+
+            score_class = woe.compute_score(list_concepts, list_classes)
+
+            print("SERIE SCORE", score_class)
+            print("WOE SCORE PRE: ", woe_score)
+
+            woe_score[test.classes.index(label)] = score_class[test.classes.index(label)]
+
+            print("WOE SCORE DOPO: ", woe_score)
+
+            file_name = os.path.join(output_folder,
+                                     f"ablation_study_result_{cfg.woe.concept_presence_method}_favor_against_concepts.txt")
+    else:
+        # In this case we are considering the same set of concepts, specified before, for all the classes considered
+        woe_score = woe.compute_score(list_concepts, list_classes)
+
+        file_name = os.path.join(output_folder,f"ablation_study_result_{cfg.woe.concept_presence_method}.txt")
 
     with open(file_name, "a") as file:
         print("printing on file")

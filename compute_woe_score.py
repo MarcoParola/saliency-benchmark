@@ -95,13 +95,20 @@ def main(cfg):
     woe = WeightOfEvidence(test, dataset_name, model, cfg.saliency.method, cfg.modelSam,
                            cfg.woe.concept_presence_method)
 
-    list_classes = test.classes
+    if cfg.woe.dataset == True:
+    #     # Su tutto il dataset
+        list_classes = test.classes
+    #
+    else:
+    #     # Only for a specified subset of classes and concepts
+    #     list_concepts = cfg.woe.concepts
+         list_classes = cfg.woe.classes
 
     # Compute woe score for each class
     # print(f"list concepts: {list_concepts}")
     print(f"list classes: {list_classes}")
 
-    woe_score = torch.zeros(len(list_classes))
+    woe_score = torch.zeros(len(test.classes))
 
     for label in list_classes:
 
@@ -109,7 +116,14 @@ def main(cfg):
 
         print("List concepts:", list_concepts)
 
-        woe_score += woe.compute_score(list_concepts, label)
+        score_class = woe.compute_score(list_concepts, list_classes)
+
+        print("SERIE SCORE", score_class)
+        print("WOE SCORE PRE: ", woe_score)
+
+        woe_score[test.classes.index(label)] = score_class[test.classes.index(label)]
+
+        print("WOE SCORE DOPO: ", woe_score)
 
     output_folder = os.path.abspath('ablation_results')
     if not os.path.exists(output_folder):

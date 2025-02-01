@@ -18,7 +18,8 @@ def compute_single_woe_score(P_h_cp, P_h):
     P_hneg = 1 - P_h
 
     if P_h_cp == 0:
-        woe_h_cp = 0
+        #woe_h_cp = 0
+        print("ERRORE, Prob a 0")
     else:
         if P_h != 0:
             woe_h_cp = log(P_h_cp / P_hneg_cp) - log(P_h / P_hneg)
@@ -26,6 +27,24 @@ def compute_single_woe_score(P_h_cp, P_h):
             woe_h_cp = log(P_h_cp / P_hneg_cp)
     #print("Woe_score_computed:", woe_h_cp)
     return woe_h_cp
+
+
+def compute_probability(occ, row_occ_concept_id, label_id, concept_id):
+
+    print("Row occ: ", row_occ_concept_id) # It contains the row of the specified concept, but with only the cells regarding the labels_specified
+
+    # Compute probability of class h, in set of class labels_specified, given concept positioned in row concept_id of occurrences matrix
+    occ_cp_h = occ.iloc[concept_id, label_id]
+
+    print("cell:", occ_cp_h)
+
+    sum_cell_cp_labels_specified = row_occ_concept_id.sum()
+
+    P_h_cp = occ_cp_h/sum_cell_cp_labels_specified
+
+    print("Prob", P_h_cp)
+
+    return P_h_cp
 
 
 class WeightOfEvidence:
@@ -58,24 +77,22 @@ class WeightOfEvidence:
 
         self.dir_mask = os.path.join(dir, 'masks')
         #self.dir_concept = os.path.join(dir, 'concepts')
+        epsilon = 5 * (10 ** (-4))
 
-        # Check if the tensor with the probabilities has been already computed
-        output_dir = os.path.abspath(f'prob_{concept_presence_method}')
+        # Check if the tensor with the occurrences has been already computed
+        output_dir = os.path.abspath(f'occurrence_{concept_presence_method}')
 
-        #tensor_prob_path = os.path.join(output_dir,model,extractor_method,f"woe_prob_{saliency_method}_{dataset_name}.pth")
-        csv_prob_path = os.path.join(output_dir, model, extractor_method, f"prob_{saliency_method}_{dataset_name}.csv")
-        if os.path.exists(csv_prob_path):
-            self.final_prob = pd.read_csv(csv_prob_path, index_col=0)
-            print("Probability already present")
-            print(self.final_prob)
+        csv_occ_path = os.path.join(output_dir, model, extractor_method, f"occ_{saliency_method}_{dataset_name}.csv")
+        if os.path.exists(csv_occ_path):
+            self.occ = pd.read_csv(csv_occ_path, index_col=0)
+            print("Occurrences already present")
+            print(self.occ)
+            self.occ += epsilon
         else:
 
-            # Compute P(h|cp) for each concept cp and for each class h, and saved each element in the matrix prob
-            # prob inizializzarlo in pandas dataFrame e salvare in csv e non pth
-            # prob = torch.zeros(len(self.list_concepts),
-            #                   len(self.dataset.classes))  #for each concept I will produce the WoE(h|cp)
+            # Compute Occurrences for each concept cp and for each class h, and saved each element in the matrix self.occ
 
-            prob = pd.DataFrame(np.zeros((len(self.list_concepts), len(self.dataset.classes))),
+            self.occ = pd.DataFrame(np.zeros((len(self.list_concepts), len(self.dataset.classes))),
                                 index=self.list_concepts,
                                 columns=self.dataset.classes)
 
@@ -104,22 +121,12 @@ class WeightOfEvidence:
 
                     print(f"Presence in input {i} : {concept_presence}")
 
-                    prob.loc[concept, self.dataset.classes[label]] += concept_presence  #
-
-            # Compute probability of P(h|cp)
-            self.final_prob = pd.DataFrame(np.zeros((len(self.list_concepts), len(self.dataset.classes))),
-                                           index=self.list_concepts,
-                                           columns=self.dataset.classes)
-            for label in range(prob.shape[1]):
-                for concept in range(prob.shape[0]):
-                    # Divide each member of the matrix for the number of times in which the concept is present in an image
-                    if prob.iloc[concept].sum() != 0:
-                        self.final_prob.iloc[concept, label] = prob.iloc[concept, label] / prob.iloc[concept].sum()
+                    self.occ.loc[concept, self.dataset.classes[label]] += concept_presence  # increment occurrences for cell (concept,class)
 
             if not os.path.exists(os.path.join(output_dir, model, extractor_method)):
                 os.makedirs(os.path.join(output_dir, model, extractor_method))
-            #torch.save(prob, tensor_prob_path)
-            self.final_prob.to_csv(csv_prob_path)
+            self.occ.to_csv(csv_occ_path)
+            self.occ += epsilon
 
     def compute_score(self, concepts_specified, labels_specified):
 
@@ -139,12 +146,16 @@ class WeightOfEvidence:
                     #print(f"concept {concept} not in list {concepts_specified}")
                     continue
 
-                P_h_cp = self.final_prob.iloc[concept_id, label_id]
+                #occ_h_cp = self.occ.iloc[concept_id, label_id]
+
+                print("concept:", concept)
+                print(labels_specified)
+                print("riga:",self.occ.loc[concept, labels_specified])
+
+                P_h_cp = compute_probability(self.occ, self.occ.loc[concept, labels_specified], label_id, concept_id)
 
                 # Count of number of images belonging to class "label" in the dataset and then divided
                 # by total number of image, to retrieve the probability to belong to a certain class
-                value = self.saliency_info["Predicted Class"].value_counts().iloc[label_id]
-                print(f"Numero images belonging to class {label}: {value}")
                 P_h = self.saliency_info["Predicted Class"].value_counts().iloc[label_id] / self.dataset.__len__()
                 woe_label = woe_label + compute_single_woe_score(P_h_cp, P_h)
 
