@@ -25,12 +25,6 @@ def main(cfg):
         model_path = os.path.join(cfg.currentDir, cfg.checkpoint)
         model.load_state_dict(torch.load(model_path, map_location=cfg.train.device)['state_dict'])
 
-    #qui sotto non è uguale a sopra?
-    if cfg.dataset.name != 'imagenet':
-        model_path = os.path.join(cfg.currentDir, cfg.checkpoint)
-        # model.load_state_dict(torch.load(model_path)['state_dict'])
-        model.load_state_dict(torch.load(model_path, map_location=cfg.train.device)['state_dict'])
-
     device = torch.device(cfg.train.device if torch.cuda.is_available() else "cpu")
     model = model.to(device)
     model.eval()
@@ -41,7 +35,6 @@ def main(cfg):
     test = ClassificationDataset(test)
     dataloader = torch.utils.data.DataLoader(test, batch_size=cfg.train.batch_size, shuffle=True)
 
-    #qui dovremmo inserire la localization?
     insertion_metric = Insertion(model, n_pixels=cfg.metrics.n_pixels)
     deletion_metric = Deletion(model, n_pixels=cfg.metrics.n_pixels)
 
@@ -97,7 +90,9 @@ def main(cfg):
     # print(f'AUC Deletion Score: {avg_auc_del_score}')
 
     # Save results to file
-    output_file = os.path.join(cfg.currentDir, cfg.metrics.output_file)
+    finetune = "finetuned_" if cfg.train.finetune else "no_finetuned_"
+    name_file = f"{finetune}_{cfg.model}_{cfg.dataset.name}_{cfg.saliency.method}.txt"
+    output_file = os.path.join(cfg.currentDir, name_file)
     with open(output_file, 'w') as f:
         f.write(f'AUC Insertion Score: {avg_auc_ins_score}\n')
         f.write(f'AUC Deletion Score: {avg_auc_del_score}\n')

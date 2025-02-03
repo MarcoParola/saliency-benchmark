@@ -89,7 +89,7 @@ def main(cfg):
     with open(output_csv, mode='w', newline='') as file:
         writer = csv.writer(file)
         # Write the header
-        writer.writerow(["ID", "True Class", "Predicted Class", "gradcam path", "lime path", "sidu path"])
+        writer.writerow(["ID", "True Class", "Predicted Class", "gradcam path", "lime path","rise path", "sidu path"])
 
         for images, labels in dataloader:
 
@@ -110,7 +110,7 @@ def main(cfg):
                                  os.path.join(gradcam_path, f"saliency_map_{image_count}.pth"),
                                  os.path.join(lime_path, f"saliency_map_{image_count}.pth"),
                                  # os.path.join(lrp_path, f"saliency_map_{image_count}.pth"),
-                                 # os.path.join(rise_path, f"saliency_map_{image_count}.pth"),
+                                 os.path.join(rise_path, f"saliency_map_{image_count}.pth"),
                                  os.path.join(sidu_path, f"saliency_map_{image_count}.pth")])
                 image_count += 1
 
