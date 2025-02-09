@@ -63,7 +63,7 @@ def main(cfg):
             woe_score_negative[test.classes.index(label)] = score_class_neg[test.classes.index(label)]
 
         file_name = os.path.join(output_folder,
-                                     f"ablation_study_result_{cfg.woe.concept_presence_method}_favor_against_concepts_pos_neg_scores_concepts_after_intel_problem.txt")
+                                     f"ablation_study_result_{cfg.woe.concept_presence_method}_favor_against_concepts_pos_neg_scores_concepts_fidelity_comparison.txt")
         with open(file_name, "a") as file:
                 file.write(
                     "------------------------------------------------TEST----------------------------------------------------------------------------------\n")

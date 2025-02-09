@@ -115,32 +115,32 @@ def main(cfg):
         plt.figure(figsize=(5, 5))
         plt.imshow(image.squeeze().permute(1, 2, 0))
         plt.axis('off')
-        plt.savefig(os.path.join(output_dir, f'1original_{cfg.saliency.method}_{i}.pdf'), bbox_inches='tight')
+        plt.savefig(os.path.join(output_dir, f'1original_{cfg.saliency.method}_purple.pdf'), bbox_inches='tight')
         plt.close()
 
         # Saliency map
         plt.figure(figsize=(5, 5))
         plt.imshow(image.squeeze().permute(1, 2, 0))
-        plt.imshow(saliency.squeeze().detach().numpy(), cmap='jet', alpha=0.4)
+        plt.imshow(saliency.squeeze().detach().numpy(), cmap='jet', alpha=0.6)
         plt.axis('off')
-        plt.savefig(os.path.join(output_dir, f'1saliency_{cfg.saliency.method}_{i}.pdf'), bbox_inches='tight')
+        plt.savefig(os.path.join(output_dir, f'1saliency_{cfg.saliency.method}_purple.pdf'), bbox_inches='tight')
         plt.close()
 
         # Concept mask
         plt.figure(figsize=(5, 5))
         plt.imshow(image.squeeze().permute(1, 2, 0))
-        plt.imshow(mask_head_paws.squeeze(), cmap='jet', alpha=0.4)
+        plt.imshow(mask_head_paws.squeeze(), cmap='Purples', alpha=0.6)
         plt.axis('off')
-        plt.savefig(os.path.join(output_dir, f'1concept_{cfg.saliency.method}_{i}.pdf'), bbox_inches='tight')
+        plt.savefig(os.path.join(output_dir, f'1concept_{cfg.saliency.method}_green.pdf'), bbox_inches='tight')
         plt.close()
 
         # Combined saliency & concept mask
         plt.figure(figsize=(5, 5))
         plt.imshow(image.squeeze().permute(1, 2, 0))
-        plt.imshow(saliency.squeeze().detach().numpy(), cmap='jet', alpha=0.4)
-        plt.imshow(mask_head_paws.squeeze(), cmap='jet', alpha=0.4)
+        plt.imshow(saliency.squeeze().detach().numpy(), cmap='jet', alpha=0.6)
+        plt.imshow(mask_head_paws.squeeze(), cmap='Purples', alpha=0.6)
         plt.axis('off')
-        plt.savefig(os.path.join(output_dir, f'1fusion_{cfg.saliency.method}_{i}.pdf'), bbox_inches='tight')
+        plt.savefig(os.path.join(output_dir, f'1fusion_{cfg.saliency.method}_green.pdf'), bbox_inches='tight')
         plt.close()
 
 

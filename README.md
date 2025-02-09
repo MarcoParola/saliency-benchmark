@@ -27,6 +27,8 @@ For a rapid trial, you can fine the extracted masks, the saliency maps computed 
 
 ## Alignment between human concepts and explainable deep learning models
 
+Example of classification with VGG11 model, explained using GRADCAM as saliency method. The concepts extracted with Florence2 model of GroundedSAM2 are "Head" and "Paws".
+
 |    Original Image                                             | Saliency map                                                                                                                                                   | Concepts  extracted                 | Saliency + Concepts |
 |---------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------|---------------------|
 |![](./saliency_image_example/original_gradcam_25.jpg) | ![](./saliency_image_example/saliency_gradcam_25.jpg) | ![](./saliency_image_example/concept_gradcam_25.jpg) |![](./saliency_image_example/fusion_gradcam_25.jpg) 
