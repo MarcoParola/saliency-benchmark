@@ -100,10 +100,6 @@ def main(cfg):
         outputs = model(images)
         _, preds = torch.max(outputs, 1)
 
-        print(images.dtype)
-        print(type(images))
-        print(images.shape)
-
         # Generate saliency maps
         saliency_maps = method.generate_saliency(input_images=images, target_layer=target_layers_name)
 
@@ -115,8 +111,6 @@ def main(cfg):
             image = images[i]
             image = image.cpu()
             saliency = saliency_maps[i]
-            print("main")
-            print(saliency.shape)
             predicted_class = preds[i]
             true_class = labels[i]
 

@@ -32,7 +32,6 @@ def main(cfg):
     # load test dataset
     data_dir = os.path.join(cfg.currentDir, cfg.dataset.path)
     train, val, test = load_classification_dataset(cfg.dataset.name, data_dir, cfg.dataset.resize)
-    test = ClassificationDataset(test)
     dataloader = torch.utils.data.DataLoader(test, batch_size=cfg.train.batch_size, shuffle=True)
 
     insertion_metric = Insertion(model, n_pixels=cfg.metrics.n_pixels)

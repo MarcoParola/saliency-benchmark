@@ -91,7 +91,7 @@ def plot_grid_masks(image, masks, categories, classes, idx):
     plt.close()
 
 
-@hydra.main(config_path='../config', config_name='config', version_base=None)
+@hydra.main(config_path='../../config', config_name='config', version_base=None)
 def main(cfg):
     caption = retrieve_concepts(cfg.dataset.name)
 
