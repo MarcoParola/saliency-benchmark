@@ -1,3 +1,5 @@
+import os.path
+
 import hydra
 import matplotlib.pyplot as plt
 import torch.nn as nn
@@ -10,7 +12,7 @@ from src.utils import *
 
 
 class RISE(nn.Module):
-    def __init__(self, model, n_masks=500, p1=0.1, input_size=(224, 224), initial_mask_size=(7, 7), n_batch=32,
+    def __init__(self, model, n_masks=500, p1=0.1, input_size=(224, 224), initial_mask_size=(7, 7), n_batch=32,  #work better with n_masks=1000 e n_batch=128
                  mask_path=None):
         super().__init__()
         self.model = model
@@ -110,9 +112,13 @@ class rise_interface:
         self.device = device
         self.kwargs = kwargs
 
-    def generate_saliency(self, input_images, predicted_class, target_class=None, target_layer=None):
+    def generate_saliency(self, input_images, target_class=None, target_layer=None):
         # Initialize the RISE method with the model
         rise_model = RISE(self.model)
+
+        # Get model predictions
+        outputs = self.model(input_images)
+        _, preds = torch.max(outputs, 1)
 
         # Initialize the tensor to store saliency maps for the batch
         batch_saliencies = []
@@ -123,11 +129,8 @@ class rise_interface:
         for image in input_images:
             # Generate the saliency map for the current image
             saliency_map = rise_model(image.unsqueeze(0).to(self.device))
-            # print(saliency_map.shape)
-            # print(saliency_map)
-            saliency_map = saliency_map[predicted_class[i], :]  # Assuming saliency_map is of shape (1, num_channels, height, width)
-            # print(saliency_map.shape)
-            # print(saliency_map)
+
+            saliency_map = saliency_map[preds[i]]
 
             # Append the saliency map to the batch_saliencies list
             batch_saliencies.append(saliency_map)
@@ -196,7 +199,7 @@ def main(cfg):
         _, preds = torch.max(outputs, 1)
 
         # Generate saliency maps
-        saliency_maps = method.generate_saliency(images, preds)
+        saliency_maps = method.generate_saliency(images)
         #print(saliency_maps.shape)
 
         for i in range(images.size(0)):
