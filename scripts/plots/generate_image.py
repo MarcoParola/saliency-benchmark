@@ -11,7 +11,7 @@ from src.datasets.classification import ClassificationDataset
 from src.models.classifier import ClassifierModule
 from src.utils import *
 
-@hydra.main(config_path='../config', config_name='config')
+@hydra.main(config_path='../../config', config_name='config')
 def main(cfg):
     # Load the model and data
     model = ClassifierModule(

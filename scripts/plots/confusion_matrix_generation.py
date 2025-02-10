@@ -54,7 +54,7 @@ def compute_cm(predictions, labels, classes, model, dataset_name):
     plt.close()
 
 
-@hydra.main(config_path='../config', config_name='config', version_base=None)
+@hydra.main(config_path='../../config', config_name='config', version_base=None)
 def main(cfg):
     # Set seed
     if cfg.seed == -1:

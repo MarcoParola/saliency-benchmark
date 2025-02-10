@@ -109,7 +109,7 @@ def main(cfg):
             i += 1
 
         output_dir = os.path.abspath('output')
-        os.makedirs(output_dir, exist_ok=True) 
+        os.makedirs(output_dir, exist_ok=True)
 
         # Original image
         plt.figure(figsize=(5, 5))

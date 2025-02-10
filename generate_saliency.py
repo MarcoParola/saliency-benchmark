@@ -130,9 +130,7 @@ def main(cfg):
         image = img.unsqueeze(0)
 
         # Generate saliency maps
-        if cfg.saliency.method == "rise":
-            saliency_map = saliency_method.generate_saliency(image, [0])
-        elif cfg.saliency.method == "lrp":
+        if cfg.saliency.method == "lrp":
             saliency_map = saliency_method.generate_saliency(input_images=image, batch=cfg.train.batch_size,
                                                               resize=cfg.dataset.resize)
         else:
