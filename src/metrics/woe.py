@@ -1,13 +1,11 @@
-import csv
 import os
 from math import log
 
-import hydra
 import numpy as np
 import pandas as pd
 import torch
 
-from src.concept_presence import concept_presence_compute
+from src.metrics.concept_presence import concept_presence_compute
 from src.datasets.classification import load_classification_dataset
 from src.utils import retrieve_concepts, load_list, load_mask, load_saliency_map, retrieve_concepts_ordered
 

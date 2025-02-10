@@ -1,15 +1,12 @@
 import os
 
 import hydra
-import numpy as np
 import torch
-import wandb
 
 from scripts import saliency_info_generation
 from src.datasets.classification import load_classification_dataset
-from src.log import get_loggers
-from src.utils import load_list, retrieve_concepts_ordered, retrieve_concepts_for_class
-from src.woe import WeightOfEvidence
+from src.utils import retrieve_concepts_ordered, retrieve_concepts_for_class
+from src.metrics.woe import WeightOfEvidence
 
 
 @hydra.main(config_path='../config', config_name='config', version_base=None)
