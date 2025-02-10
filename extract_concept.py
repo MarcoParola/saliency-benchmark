@@ -43,7 +43,7 @@ def main(cfg):
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
 
-        save_list(os.path.join(output_folder,'list_concepts.txt'), model.ontology.classes())
+        #save_list(os.path.join(output_folder,'list_concepts.txt'), model.ontology.classes())
 
         for idx in range(dataset.__len__()):
             print("IMG " + str(idx))
@@ -62,29 +62,32 @@ def main(cfg):
                 # save_images_with_mask_for_all_concepts(image, masks, model, boxes)  #to print all the class masks, even if not present
                 # plot_grid_masks(image, masks, model.ontology.classes(), idx)
                 output_dir_tensors = os.path.join(output_folder,'masks')
-                output_dir_classes = os.path.join(output_folder,'concepts')
+                #output_dir_classes = os.path.join(output_folder,'concepts')
                 if not os.path.exists(output_dir_tensors):
                     os.makedirs(output_dir_tensors)
-                if not os.path.exists(output_dir_classes):
-                    os.makedirs(output_dir_classes)
+                #if not os.path.exists(output_dir_classes):
+                    #os.makedirs(output_dir_classes)
 
                 #mi carico la lista ordinata di concetti, for su questo, vedo se è presente su classes, allora lo associo, riordina
                 #ndo la maschera
 
-                masks_ordered = np.zeros(len(list_ordered_concept))
+                masks_ordered = np.expand_dims(np.full((resize, resize), False, dtype=bool), axis=0)
+                masks_ordered = np.repeat(masks_ordered, len(list_ordered_concept), axis=0)
                 class_ordered = np.zeros(len(list_ordered_concept))
 
                 list_concept_ontology = model.ontology.classes()
 
-                print("lista ontology:{list_concept_ontology}")
+                print(f"lista ontology:{list_concept_ontology}")
 
-                for concept in list_ordered_concept:
-                    print(f"concept: {concept}")
-                    #make bind between ordered concept and concept of GroundedSam2, finding the class corresponding to the concept of this cycle for
-                    idx_concept = list_concept_ontology.index(concept)
-                    masks_ordered = np.append(masks_ordered, masks[idx_concept])
-                    #only for debug purpose TODO delete it
-                    class_ordered = np.append(class_ordered, classes[idx_concept])
+                for i, concept_ordered in enumerate(list_ordered_concept):
+                    print(f"concept: {concept_ordered} in index {i}")
+                    # make bind between ordered concept and concept of GroundedSam2, finding the class corresponding to the concept of this cycle for
+                    idx_concept = list_concept_ontology.index(concept_ordered)
+                    # mask_single_concept = np.full((resize, resize), False, dtype=bool) # initialize empty mask
+                    for mask, concept in zip(masks, classes):
+                        id = int(concept.item())
+                        if id == idx_concept:
+                            masks_ordered[i] = np.logical_or(masks_ordered[i], mask)
 
 
                 save_mask(os.path.join(output_dir_tensors, f'mask_{idx}.pth'), masks_ordered)

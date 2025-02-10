@@ -84,11 +84,14 @@ def plot_grid_masks(image, masks, categories, classes, idx):
 
     # Adjust layout and show the grid
     plt.tight_layout()
-    plt.savefig(os.path.join("output", "plot_masks" + str(idx) + ".jpg"))
+    output_folder = os.path.abspath('output')
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+    plt.savefig(os.path.join(output_folder, "plot_masks" + str(idx) + ".jpg"))
     plt.close()
 
 
-@hydra.main(config_path='../config', config_name='config', version_base=None)
+@hydra.main(config_path='../../config', config_name='config', version_base=None)
 def main(cfg):
     caption = retrieve_concepts(cfg.dataset.name)
 

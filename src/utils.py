@@ -372,7 +372,7 @@ def retrieve_concepts(dataset_name):
     caption = "/".join(all_concepts)
     #num_concepts = len(all_concepts)
 
-    print("Caption:", caption)
+    #print("Caption:", caption)
     return caption
 
 def retrieve_concepts_ordered(dataset_name):
@@ -385,7 +385,7 @@ def retrieve_concepts_ordered(dataset_name):
     with open(os.path.join(absolute_path, 'concepts', dataset_name + "_concepts.csv"), mode="r") as file:
         reader = csv.DictReader(file)
         for row in reader:
-            print(row)
+            #print(row)
             # Split the concepts in the current row and extend the list
             concepts = row["concepts"].split(";")
             all_concepts.extend(concepts)
@@ -394,25 +394,26 @@ def retrieve_concepts_ordered(dataset_name):
 
 def retrieve_concepts_for_class(class_name, dataset_name):
 
-    concepts = []
+    concepts_pos = []
+    concepts_neg = []
 
     # Load the CSV file
     df = pd.read_csv(os.path.join(os.path.abspath('data'),'concepts',f'{dataset_name}_concepts_favor_against.csv'))
 
     # Extract the row corresponding to the class
     row = df[df["class"].str.lower() == class_name.lower()]
-    print(row)
+    #print(row)
 
     # Get the values of concept_favor and concept_against
     if not row.empty:
         concept_favor = row["concept_favor"].item().split(";")
         concept_against = row["concept_against"].item().split(";")
-        concepts.extend(concept_favor)
-        concepts.extend(concept_against)
+        concepts_pos.extend(concept_favor)
+        concepts_neg.extend(concept_against)
     else:
         print("Class not found.")
 
-    return concepts
+    return concepts_pos, concepts_neg
 
 if __name__ == "__main__":
 

@@ -1,15 +1,12 @@
 import os
 
 import hydra
-import numpy as np
 import torch
-import wandb
 
 from scripts import saliency_info_generation
 from src.datasets.classification import load_classification_dataset
-from src.log import get_loggers
-from src.utils import load_list, retrieve_concepts_ordered, retrieve_concepts_for_class
-from src.woe import WeightOfEvidence
+from src.utils import retrieve_concepts_ordered, retrieve_concepts_for_class
+from src.metrics.woe import WeightOfEvidence
 
 
 @hydra.main(config_path='../config', config_name='config', version_base=None)
@@ -50,32 +47,54 @@ def main(cfg):
 
     if cfg.woe.concept_favor_against == True:
         # In this case we are analyzing for each class only a subset of concepts that are balanced in concept in favor of the class and concept against the class
-        woe_score = torch.zeros(len(test.classes))
+        woe_score_positive = torch.zeros(len(test.classes))
+        woe_score_negative = torch.zeros(len(test.classes))
 
         for label in list_classes:
-            list_concepts = retrieve_concepts_for_class(label, dataset_name)
+            list_concepts_pos, list_concepts_neg = retrieve_concepts_for_class(label, dataset_name)
 
-            score_class = woe.compute_score(list_concepts, list_classes)
+            score_class_pos, woe_matrix_pos = woe.compute_score(list_concepts_pos, list_classes)
+            score_class_neg, woe_matrix_neg = woe.compute_score(list_concepts_neg, list_classes)
 
-            woe_score[test.classes.index(label)] = score_class[test.classes.index(label)]
-            file_name = os.path.join(output_folder,
-                                     f"ablation_study_result_{cfg.woe.concept_presence_method}_favor_against_concepts.txt")
+            woe_score_positive[test.classes.index(label)] = score_class_pos[test.classes.index(label)]
+            woe_score_negative[test.classes.index(label)] = score_class_neg[test.classes.index(label)]
+
+        file_name = os.path.join(output_folder,
+                                     f"ablation_study_result_{cfg.woe.concept_presence_method}_favor_against_concepts_pos_neg_scores_concepts_fidelity_comparison.txt")
+        with open(file_name, "a") as file:
+                file.write(
+                    "------------------------------------------------TEST----------------------------------------------------------------------------------\n")
+                file.write("Dataset:" + str(cfg.dataset.name) + "\n")
+                file.write("All classes and all concept used? " + str(cfg.woe.dataset) + "\n")
+                file.write("Modello:" + str(cfg.model) + "\n")
+                file.write("Saliency method:" + str(cfg.saliency.method) + "\n")
+                file.write("Modello SAM:" + str(cfg.modelSam) + "\n")
+                file.write("Woe_score favor concepts:" + str(woe_score_positive) + "\n")
+                file.write("Woe_score against concepts:" + str(woe_score_negative) + "\n")
+                file.write("Woe score media favor concepts:" + str(woe_score_positive.mean().item()) + "\n")
+                file.write("Woe score media against concepts:" + str(woe_score_negative.mean().item()) + "\n")
     else:
         # In this case we are considering the same set of concepts, specified before, for all the classes considered
-        woe_score = woe.compute_score(list_concepts, list_classes)
+        woe_score, woe_matrix = woe.compute_score(list_concepts, list_classes)
+
+        output_dir = os.path.abspath('ablation_results')
+        csv_woe_path = os.path.join(output_dir, model, cfg.modelSam, cfg.woe.concept_presence_method, f"woe_{cfg.saliency.method}_{dataset_name}.csv")
+        if not os.path.exists(os.path.join(output_dir, model, cfg.modelSam,cfg.woe.concept_presence_method)):
+            os.makedirs(os.path.join(output_dir, model, cfg.modelSam,cfg.woe.concept_presence_method))
+        woe_matrix.to_csv(csv_woe_path)
 
         file_name = os.path.join(output_folder,f"ablation_study_result_{cfg.woe.concept_presence_method}.txt")
 
-    with open(file_name, "a") as file:
-        file.write(
-            "------------------------------------------------TEST----------------------------------------------------------------------------------\n")
-        file.write("Dataset:" + str(cfg.dataset.name) + "\n")
-        file.write("All classes and all concept used? " + str(cfg.woe.dataset) +"\n")
-        file.write("Modello:" + str(cfg.model) + "\n")
-        file.write("Saliency method:" + str(cfg.saliency.method) + "\n")
-        file.write("Modello SAM:" + str(cfg.modelSam) + "\n")
-        file.write("Woe_score:" + str(woe_score) + "\n")
-        file.write("Woe score media:" + str(woe_score.mean().item()) + "\n")
+        with open(file_name, "a") as file:
+            file.write(
+                "------------------------------------------------TEST----------------------------------------------------------------------------------\n")
+            file.write("Dataset:" + str(cfg.dataset.name) + "\n")
+            file.write("All classes and all concept used? " + str(cfg.woe.dataset) +"\n")
+            file.write("Modello:" + str(cfg.model) + "\n")
+            file.write("Saliency method:" + str(cfg.saliency.method) + "\n")
+            file.write("Modello SAM:" + str(cfg.modelSam) + "\n")
+            file.write("Woe_score:" + str(woe_score) + "\n")
+            file.write("Woe score media:" + str(woe_score.mean().item()) + "\n")
 
 if __name__ == '__main__':
     main()

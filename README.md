@@ -23,3 +23,12 @@ For a rapid trial, you can fine the extracted masks, the saliency maps computed 
 |------------|---------------------------------------------------|----------------------------------------------------------|-----------------------------------------------------|-----------------------------------------------------|-----------------------------------------------------|
 | Golf ball  | ![](./saliency_image_example/image_golf_ball.png) | ![](./saliency_image_example/VGG_imagenette_gradcam.png) | ![](./saliency_image_example/VGG_imagenette_lime.png) | ![](./saliency_image_example/VGG_imagenette_rise.png) | ![](./saliency_image_example/VGG_imagenette_sidu.png) |
 | Glacier    | ![](./saliency_image_example/image_glacier.png)   | ![](./saliency_image_example/VGG_intel_gradcam.png)   | ![](./saliency_image_example/VGG_intel_lime.png) | ![](./saliency_image_example/VGG_intel_rise.png) | ![](./saliency_image_example/VGG_intel_sidu.png) |
+
+
+## Alignment between human concepts and explainable deep learning models
+
+Example of classification with VGG11 model, explained using GRADCAM as saliency method. The concepts extracted with Florence2 model of GroundedSAM2 are "Head" and "Paws".
+
+|    Original Image                                             | Saliency map                                                                                                                                                   | Concepts  extracted                 | Saliency + Concepts |
+|---------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------|---------------------|
+|![](./saliency_image_example/original_gradcam_25.jpg) | ![](./saliency_image_example/saliency_gradcam_25.jpg) | ![](./saliency_image_example/concept_gradcam_25.jpg) |![](./saliency_image_example/fusion_gradcam_25.jpg) 

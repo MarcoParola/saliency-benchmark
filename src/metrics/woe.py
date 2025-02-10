@@ -1,13 +1,11 @@
-import csv
 import os
 from math import log
 
-import hydra
 import numpy as np
 import pandas as pd
 import torch
 
-from src.concept_presence import concept_presence_compute
+from src.metrics.concept_presence import concept_presence_compute
 from src.datasets.classification import load_classification_dataset
 from src.utils import retrieve_concepts, load_list, load_mask, load_saliency_map, retrieve_concepts_ordered
 
@@ -126,6 +124,11 @@ class WeightOfEvidence:
         # compute total score for each class specified by the user
         woe_score = torch.zeros(len(self.dataset.classes))
 
+        # mantain also the single score computed for each couple (concept,class)
+        woe_matrix = pd.DataFrame(np.zeros((len(self.list_concepts), len(self.dataset.classes))),
+                                index=self.list_concepts,
+                                columns=self.dataset.classes)
+
         for label_id, label in enumerate(self.dataset.classes):
 
             if label not in labels_specified:
@@ -144,10 +147,12 @@ class WeightOfEvidence:
                 # Count of number of images belonging to class "label" in the dataset and then divided
                 # by total number of image, to retrieve the probability to belong to a certain class
                 P_h = self.saliency_info["Predicted Class"].value_counts().iloc[label_id] / self.dataset.__len__()
-                woe_label = woe_label + compute_single_woe_score(P_h_cp, P_h)
+                woe_score_concept_class = compute_single_woe_score(P_h_cp, P_h)
+                woe_label = woe_label + woe_score_concept_class
+                woe_matrix.loc[concept,label] = woe_score_concept_class
 
             woe_score[label_id] = woe_label
-        return woe_score
+        return woe_score, woe_matrix
 
 
 if __name__ == "__main__":
