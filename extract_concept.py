@@ -39,7 +39,7 @@ def main(cfg):
         elif cfg.modelSam == 'GroundingDino':
             model = GroundedSam2(caption, 'Grounding DINO')
 
-        output_folder = os.path.join(os.path.abspath('mask_output_intel_image_problem'), cfg.modelSam, cfg.dataset.name)
+        output_folder = os.path.join(os.path.abspath('mask_output'), cfg.modelSam, cfg.dataset.name)
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
 

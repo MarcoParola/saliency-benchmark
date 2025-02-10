@@ -74,9 +74,7 @@ def main(cfg):
             _, preds = torch.max(outputs, 1)
 
             # Generate saliency maps
-            if cfg.saliency.method == "rise":
-                saliency_maps = saliency_method.generate_saliency(images, preds)
-            elif cfg.saliency.method == "lrp":
+            if cfg.saliency.method == "lrp":
                 saliency_maps = saliency_method.generate_saliency(input_images=images, batch=cfg.train.batch_size,resize=cfg.dataset.resize)
             else:
                 saliency_maps = saliency_method.generate_saliency(input_images=images, target_layer=target_layer)
@@ -90,8 +88,6 @@ def main(cfg):
                 image = image.cpu()
                 saliency = saliency_maps[i]
                 saliency = saliency.cpu()
-                print("main")
-                print(saliency.shape)
                 predicted_class = preds[i]
                 true_class = labels[i]
 
