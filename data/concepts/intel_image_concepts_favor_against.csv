@@ -1,7 +1,7 @@
 class,concept_favor,concept_against
-Buildings,Wall;Window;Roof;Facade,Ice;Mountain Peak;Water;Boat
-Forest,Tree;Vegetation;Rock,Window;Wall;Car
-Glacier,Rock;Ice;Sky,Roof;Facade;Beach
-Mountain,Mountain Peak;Sky;Tree,Beach;Streetlights;Boat
+Buildings,Wall;Window;Roof;Facade;Sky,Ice;Mountain Peak;Water;Boat;Streetlights
+Forest,Tree;Vegetation;Sky,Boat;Wall;Ice
+Glacier,Rock;Ice;Sky,Roof;Streetlights;Car
+Mountain,Mountain Peak;Sky;Vegetation,Facade;Streetlights;Boat
 Sea,Boat;Beach;Water;Sky,Sidewalk;Car;Ice;Tree
-Street,Sidewalk;Streetlights;Car,Beach;Water;Rock
+Street,Sidewalk;Streetlights;Car;Facade,Vegetation;Water;Rock;Ice
