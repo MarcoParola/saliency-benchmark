@@ -28,7 +28,7 @@ def main(cfg):
     )
 
     if cfg.dataset.name != 'imagenet':
-        model_path = os.path.join(cfg.mainDir, cfg.checkpoint)
+        model_path = os.path.join(cfg.currentDir, cfg.checkpoint)
         model.load_state_dict(torch.load(model_path, map_location=cfg.train.device)['state_dict'])
 
     device = torch.device(cfg.train.device if torch.cuda.is_available() else "cpu")
@@ -49,15 +49,15 @@ def main(cfg):
         # cfg.saliency.dataset == True, and so, we want to produce the saliency maps for all the dataset images
 
         # Load test dataset
-        data_dir = os.path.join(cfg.mainDir, cfg.dataset.path)
+        data_dir = os.path.join(cfg.currentDir, cfg.dataset.path)
         train, val, test = load_classification_dataset(cfg.dataset.name, data_dir, cfg.dataset.resize)
         dataloader = data.DataLoader(test, batch_size=cfg.train.batch_size, shuffle=True)
 
         if save_images:
             # Create directory to save saliency maps
             finetune = "finetuned_" if cfg.train.finetune else "no_finetuned_"
-            output_dir_images = os.path.join(cfg.mainDir, 'saliency_output/'+cfg.saliency.method+'_saliency_maps_images', finetune + cfg.model + cfg.dataset.name)
-            output_dir_tensors = os.path.join(cfg.mainDir, 'saliency_output/'+cfg.saliency.method+'_saliency_maps_tensors', finetune + cfg.model + cfg.dataset.name)
+            output_dir_images = os.path.join(cfg.currentDir, 'saliency_output/'+cfg.saliency.method+'_saliency_maps_images', finetune + cfg.model + cfg.dataset.name)
+            output_dir_tensors = os.path.join(cfg.currentDir, 'saliency_output/'+cfg.saliency.method+'_saliency_maps_tensors', finetune + cfg.model + cfg.dataset.name)
             os.makedirs(output_dir_images, exist_ok=True)
             os.makedirs(output_dir_tensors, exist_ok=True)
 
@@ -149,7 +149,7 @@ def main(cfg):
         #ax[1].set_title(f'Pred: {predicted_class}\nTrue: {true_class}')
 
         if save_images:
-            output_dir = os.path.join(cfg.mainDir,'saliency_output', 'single_image_saliency')
+            output_dir = os.path.join(cfg.currentDir,'saliency_output', 'single_image_saliency')
             if not os.path.exists(output_dir):
                 os.makedirs(output_dir)
             output_path = os.path.join(output_dir, f'{cfg.saliency.method}_saliency_map.png')

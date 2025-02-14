@@ -5,8 +5,7 @@ from torchmetrics.detection import IntersectionOverUnion, MeanAveragePrecision
 from torchvision.ops import box_convert
 from torchvision.transforms import ToPILImage
 
-from src.utils import from_array_to_dict, from_array_to_dict_predicted, save_annotated_images, save_annotated, \
-    save_annotated_grounding_dino, from_normalized_cxcywh_to_xyxy
+from src.utils import from_array_to_dict, from_array_to_dict_predicted
 
 import scipy.stats
 
@@ -41,15 +40,11 @@ class DetectorMetrics:
             print("IMG "+str(idx))
             # Get the ground truth bounding boxes and labels
             image, ground_truth_boxes, ground_truth_labels = self.dataset.__getitem__(idx)
-            #print("Ground truth labels: ", ground_truth_labels)
 
             # Predict using the model
             box_predicted, label_predicted, scores_predicted = self.model(ToPILImage()(image))
-            #print("label_predicted: ", label_predicted)
-            #print("Predicted boxes: ", box_predicted)
 
             #Mapping of the predicted label and the true ones
-            #GroundedSam2
             list_ontology = self.model.ontology.classes()
             ground_truth_labels_elements = [self.dataset.classes[i] for i in ground_truth_labels]
             ground_truth_labels = [list_ontology.index(elem) for elem in ground_truth_labels_elements]
@@ -70,8 +65,8 @@ class DetectorMetrics:
             #                     label_predicted_elements,scores_predicted,label_predicted,ground_truth_labels, idx)
             # else:
             #     break
-            if idx>1000:
-                 break
+            # if idx>1000:
+            #      break
 
         # Calculate average metric
         average_iou = self.iou.compute()
@@ -104,62 +99,6 @@ class DetectorMetrics:
 
 # Example usage
 if __name__ == "__main__":
-    # # Create the IoU instance
-    # iou_metric = IntersectionOverUnion(class_metrics=True, iou_threshold=0.5)
-    #
-    # preds = [
-    #     {
-    #         "boxes": torch.tensor([
-    #             [296.55, 93.96, 314.97, 152.79],
-    #             [298.55, 98.96, 314.97, 151.79]]),
-    #         "labels": torch.tensor([4, 5]),
-    #     }
-    # ]
-    # target = [
-    #     {"boxes": torch.tensor([
-    #         [300.00, 100.00, 315.00, 150.00],
-    #         [300.00, 100.00, 315.00, 150.00]
-    #     ]),
-    #         "labels": torch.tensor([4, 5]),
-    #     }
-    # ]
-    #
-    # # Update the metric with predictions and ground truth
-    # iou_value = iou_metric(preds, target)
-    #
-    # print(f"IoU: {iou_value}")
-    #
-    # iou_metric.update(preds, target)
-    #
-    # preds = [
-    #     {
-    #         "boxes": torch.tensor([
-    #             [150.25, 75.50, 200.75, 125.30],
-    #             [210.00, 100.00, 250.00, 180.00]
-    #         ]),
-    #         "labels": torch.tensor([2, 3]),
-    #     }
-    # ]
-    # target = [
-    #     {
-    #         "boxes": torch.tensor([
-    #             [160.00, 80.00, 205.00, 130.00],
-    #             [215.00, 110.00, 255.00, 185.00]
-    #         ]),
-    #         "labels": torch.tensor([2, 3]),
-    #     }
-    # ]
-    #
-    # # Update the metric with predictions and ground truth
-    # iou_value = iou_metric(preds, target)
-    #
-    # print(f"IoU: {iou_value}")
-    #
-    # iou_metric.update(preds, target)
-    #
-    # iou_value = iou_metric.compute()
-    # print(f"IoU: {iou_value}")
-
     # prova Mean Average Precision
 
     preds = [dict(boxes=tensor([[258.0, 41.0, 606.0, 285.0]]),

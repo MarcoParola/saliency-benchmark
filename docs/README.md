@@ -52,12 +52,12 @@ After training and testing the model, you can generate the saliency maps using `
 
 To generate the saliency maps for all the images of the specified dataset use the following command:
 ```sh
-python generate_saliency.py model=VGG11_Weights.IMAGENET1K_V1 dataset.name=intel_image checkpoint=checkpoints\finetuned_VGG11_Weights.IMAGENET1K_V1intel_image\model-epoch\=13-val_loss\=1.12.ckpt saliency.method=lrp saliency.dataset=True
+python generate_saliency.py model=VGG11_Weights.IMAGENET1K_V1 dataset.name=intel_image checkpoint=checkpoints\finetuned_VGG11_Weights.IMAGENET1K_V1intel_image\model-epoch\=13-val_loss\=1.12.ckpt saliency.method=gradcam saliency.dataset=True
 ```
 
 To generate the saliency map for the specified image, use the following command:
 ```sh
-python generate_saliency.py model=VGG11_Weights.IMAGENET1K_V1 dataset.name=intel_image checkpoint=checkpoints\finetuned_VGG11_Weights.IMAGENET1K_V1intel_image\model-epoch\=13-val_loss\=1.12.ckpt saliency.method=lrp saliency.dataset=False saliency.file_image="bird.jpg"
+python generate_saliency.py model=VGG11_Weights.IMAGENET1K_V1 dataset.name=intel_image checkpoint=checkpoints\finetuned_VGG11_Weights.IMAGENET1K_V1intel_image\model-epoch\=13-val_loss\=1.12.ckpt saliency.method=gradcam saliency.dataset=False saliency.file_image="bird.jpg"
 ```
 
 ### Extract concept
@@ -79,25 +79,25 @@ To extract concepts from the specified image, use the following command:
 python extract_concept.py modelSam=GroundingDino mask.dataset=False mask.concepts="beak/feathers/eyes" mask.file_image="bird.jpg" 
 ```
 ### Weight of Evidence
-You can compute weight of evidence score using file `evaluate/ablation_study.py`, to produce the weight of evidence score for a specific combination of model and methods you have to specify the following parameters:
+You can compute weight of evidence score using file `evaluate/woe_evaluation.py`, to produce the weight of evidence score for a specific combination of model and methods you have to specify the following parameters:
 - the `model` param from the following [string name](https://pytorch.org/vision/stable/models.html#table-of-all-available-classification-weights)
 - the `dataset.name` param from the following list: `imagenette`, `intel_image`
 - the `checkpoint` param by choosing among the pretrained model checkpoints in the checkpoint folder. Please note, in the following example the `checkpoint` param is valued according the windows path format.
 - the `saliency.method` param from the following: `sidu`, `gradcam`, `lime`, `rise`.
-- the `modelSam` param from the following `GroundingDino`,`Florence2`
-- the `woe.concept_presence_method` param from the following `cas`, `iou`, `casp`
+- the `modelSam` param from the following `GroundingDino`,`Florence2`.
+- the `woe.concept_presence_method` param from the following `cas`, `iou`, `casp`.
+- the `woe.concept_favor_against` boolean param in order to choose if compute woe score considering all the concepts for each class, or if compute the woe score for the 'favor' and 'against' concepts for a specific class, that are needed to be define in a csv file , saved as `{dataset_name}_concepts_favor_against.csv`, saved in the [concepts](data/concepts) folder.
 
 To produce woe score considering each classes of the dataset and each concepts defined, use the following command:
 ```sh
-python -m evaluate.ablation_study model=ResNet18_Weights.IMAGENET1K_V1 dataset.name=imagenette modelSam=GroundingDino saliency.method=gradcam checkpoint=checkpoints\finetuned_ResNet_imagenette.ckpt woe.concept_presence_method=cas
+python -m evaluate.woe_evaluation model=ResNet18_Weights.IMAGENET1K_V1 dataset.name=imagenette modelSam=GroundingDino saliency.method=gradcam checkpoint=checkpoints\finetuned_ResNet_imagenette.ckpt woe.concept_presence_method=cas woe.concept_favor_against=False
 ```
-
 
 ### Fidelity metrics for saliency map
 
-You can evaluate the explainability of the model by using fidelity metrics the following command: 
+You can evaluate the explainability of the model by using fidelity metrics using the following command: 
 ```bash
-python3 evaluate/evaluate_saliency.py
+python -m evaluate.evaluate_saliency
 ```
 You need to specify the following parameters in the [config.yaml](config/config.yaml) file:
 - `model`: The pre-trained model to use.

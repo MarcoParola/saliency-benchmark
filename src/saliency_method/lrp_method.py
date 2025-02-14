@@ -95,7 +95,7 @@ def main(cfg):
     )
 
     if cfg.dataset.name != 'imagenet':
-        model_path = os.path.join(cfg.mainDir, cfg.checkpoint)
+        model_path = os.path.join(cfg.currentDir, cfg.checkpoint)
         model.load_state_dict(torch.load(model_path, map_location=cfg.train.device)['state_dict'])
 
     device = torch.device(cfg.train.device if torch.cuda.is_available() else "cpu")
@@ -103,7 +103,7 @@ def main(cfg):
     model.eval()
 
     # Load test dataset
-    data_dir = os.path.join(cfg.mainDir, cfg.dataset.path)
+    data_dir = os.path.join(cfg.currentDir, cfg.dataset.path)
     train, val, test = load_classification_dataset(cfg.dataset.name, data_dir, cfg.dataset.resize)
     dataloader = data.DataLoader(test, batch_size=cfg.train.batch_size, shuffle=True)
 
@@ -113,8 +113,8 @@ def main(cfg):
     if save_images:
         # Create directory to save saliency maps
         finetune = "finetuned_" if cfg.train.finetune else "no_finetuned_"
-        output_dir_images = os.path.join(cfg.mainDir, 'saliency_output/lrp_saliency_maps_images', finetune + cfg.model + cfg.dataset.name)
-        output_dir_tensors = os.path.join(cfg.mainDir, 'saliency_output/lrp_saliency_maps_tensors', finetune + cfg.model + cfg.dataset.name)
+        output_dir_images = os.path.join(cfg.currentDir, 'saliency_output/lrp_saliency_maps_images', finetune + cfg.model + cfg.dataset.name)
+        output_dir_tensors = os.path.join(cfg.currentDir, 'saliency_output/lrp_saliency_maps_tensors', finetune + cfg.model + cfg.dataset.name)
         os.makedirs(output_dir_images, exist_ok=True)
         os.makedirs(output_dir_tensors, exist_ok=True)
 
@@ -144,8 +144,6 @@ def main(cfg):
             image = images[i]
             image = image.cpu()
             saliency = saliency_maps[i].cpu()
-            # print("main")
-            # print(saliency.shape)
             predicted_class = preds[i]
             true_class = labels[i]
 
@@ -153,7 +151,6 @@ def main(cfg):
             fig, ax = plt.subplots(1, 2, figsize=(5, 2.5))
             ax[0].imshow(image.squeeze().permute(1, 2, 0))
             ax[0].axis('off')
-            #ax[1].imshow(LRP(model.model[0]).heatmap(saliency, width=2, height=2))
             ax[1].imshow(saliency.squeeze().detach().numpy(), cmap='jet', alpha=0.4)
             ax[1].axis('off')
             ax[1].set_title(f'Pred: {predicted_class}\nTrue: {true_class}')
@@ -172,72 +169,3 @@ def main(cfg):
 
 if __name__ == '__main__':
     main()
-    # Input data
-    # Image is in RGB mode with range [0,1]
-    # img_bgr_hwc_float_0_1: numpy.array = image.load_img_norm_zero_one('images/bird.jpg')
-    # X = lrp.norm.ImageNetNorm.transform(img_bgr_hwc_float_0_1)
-    #
-    # # Simulate batch by adding a new dimension so that X is in NCHW format
-    # # N is the batch size
-    # # C is the number of channels
-    # # H is the height
-    # # W is the width
-    # X = torch.unsqueeze(X, 0)
-    #
-    # # Hide plot axes
-    # plt.axis('off')
-    #
-    # # Plot input image
-    # lrp.plot.plot_imagenet(X)
-    #
-    # # Model
-    # model = ClassifierModule(
-    #     weights='VGG11_Weights.IMAGENET1K_V1',
-    #     num_classes=10,
-    #     finetune=True,
-    #     lr=1e-6,
-    #     max_epochs=20
-    # )
-    # print(model.model[0])
-    # #model = torchvision.models.vgg16(pretrained=True)
-    # print(model)
-    # model.eval()
-    #
-    # # Low and high parameters for zB-rule
-    # batch_size: int = 1
-    # shape: Tuple[int] = (batch_size, 3, 224, 224)
-    #
-    # low: torch.Tensor = lrp.norm.ImageNetNorm.normalize(torch.zeros(*shape))
-    # high: torch.Tensor = lrp.norm.ImageNetNorm.normalize(torch.ones(*shape))
-    #
-    # # Init layer filter
-    # target_types: Tuple[type] = (Linear, AvgPool)
-    # filter_by_layer_index_type: LayerFilter = LayerFilter(model=model.model[0],
-    #                                                       target_types=target_types)
-    #
-    # print(filter_by_layer_index_type)
-    #
-    # name_map: List[Tuple[List[str], rules.LrpRule,
-    #                      Dict[str, Union[torch.Tensor, float]]]]
-    #
-    # # LRP Composite from Montavon's lrp-tutorial
-    # name_map = [
-    #     (filter_by_layer_index_type(lambda n: n == 0), LrpZBoxRule, {'low': low, 'high': high}),
-    #     (filter_by_layer_index_type(lambda n: 1 <= n <= 16), LrpGammaRule, {'gamma': 0.25}),
-    #     (filter_by_layer_index_type(lambda n: 17 <= n <= 30), LrpEpsilonRule, {'epsilon': 0.25}),
-    #     (filter_by_layer_index_type(lambda n: 31 <= n), LrpZeroRule, {}),
-    # ]
-    #
-    # print(name_map)
-    #
-    # # Init LRP
-    # lrp_instance: LRP = LRP(model.model[0])
-    #
-    # # Prepare model layers for LRP
-    # lrp_instance.convert_layers(name_map)
-    #
-    # # Compute relevance attributions
-    # R: torch.Tensor = lrp_instance.relevance(X.to('cuda'))
-    #
-    # # Display heatmap
-    # lrp_instance.heatmap(R, width=2, height=2)

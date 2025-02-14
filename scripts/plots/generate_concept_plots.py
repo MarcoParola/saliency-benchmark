@@ -26,7 +26,7 @@ def find_closest_factors(n):
     best_a, best_b = a, math.ceil(n / a)
     min_diff = abs(best_a - best_b)
 
-    # Test smaller and larger values of a to minimize the difference
+    # Test smaller and larger values of a and b to minimize the difference
     while a > 0:
         b = math.ceil(n / a)
         if a * b >= n:
@@ -67,16 +67,14 @@ def plot_grid_masks(image, masks, categories, classes, idx):
     # Loop through each class and plot
     for i in range(len(classes)):
         # Overlay the mask onto the image
-        #masked_image = image.copy()
         mask = mask_dict[i]
         combined_mask = np.any(np.array(mask), axis=0)
-        #masked_image[mask == 1] = [255, 0, 0]  # Example: mask overlay in red
 
         # Display in the corresponding grid cell
         axes[i].imshow(image)
         axes[i].imshow(combined_mask, cmap=cmap, alpha=0.5)  # Overlay mask with transparency
         axes[i].axis('off')
-        axes[i].set_title(f"{classes[i]}")
+        axes[i].set_title(f"{classes[i]}", fontdict={'fontsize': 20})
 
     # Turn off unused subplots
     for i in range(58, len(axes)):
@@ -118,13 +116,9 @@ def main(cfg):
         # Predict using the model
         boxes, masks, classes = model.mask_generation_with_all_concepts(image, resize)
 
-        #print(classes)
-
-        # print(masks.shape)
 
         if len(masks) > 0:
-            # save_images_with_mask(boxes,masks,classes,image,model,idx) #usable in case of printing only present class mask
-            # save_images_with_mask_for_all_concepts(image, masks, model, boxes)  #to print all the class masks, even if not present
+
             plot_grid_masks(image, masks, classes, model.ontology.classes(), idx)
 
 

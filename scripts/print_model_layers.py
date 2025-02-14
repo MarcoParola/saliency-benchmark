@@ -20,7 +20,7 @@ def main(cfg):
     )
 
     if cfg.dataset.name != 'imagenet':
-        model_path = os.path.join(cfg.mainDir, cfg.checkpoint)
+        model_path = os.path.join(cfg.currentDir, cfg.checkpoint)
         model.load_state_dict(torch.load(model_path, map_location=cfg.train.device)['state_dict'])
 
     for name, module in model.named_modules():
