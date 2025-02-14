@@ -287,7 +287,7 @@ def main():
     print(df_intelimage.sort_values(by='WOE Score', ascending=False))
 
 
-    ############### ALTRA COPPIA DI TABELLE ##################################
+    ############### OTHER TWO TABLES RELATED TO CLASSES ##################################
 
 
     df_imagenette = get_imagenette()
@@ -335,7 +335,7 @@ def main():
     print('Intel Image', 'groundingdino', 'casp')
     print(df_intelimage.sort_values(by='WOE Score', ascending=False))
 
-    ####### FLORENCE ALTRA TABELLA
+    ####### DATA FOR FLORENCE TABLE ###############
 
     df_imagenette = get_imagenette()
     df_imagenette = df_imagenette[

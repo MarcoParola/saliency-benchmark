@@ -16,14 +16,12 @@ def compute_single_woe_score(P_h_cp, P_h):
     P_hneg = 1 - P_h
 
     if P_h_cp == 0:
-        #woe_h_cp = 0
-        print("ERRORE, Prob a 0")
+        print("Error, Prob to 0")
     else:
         if P_h != 0:
             woe_h_cp = log(P_h_cp / P_hneg_cp) - log(P_h / P_hneg)
         else:
             woe_h_cp = log(P_h_cp / P_hneg_cp)
-    #print("Woe_score_computed:", woe_h_cp)
     return woe_h_cp
 
 
@@ -37,8 +35,6 @@ def compute_probability(occ, row_occ_concept_id, label_id, concept_id):
     sum_cell_cp_labels_specified = row_occ_concept_id.sum()
 
     P_h_cp = occ_cp_h/sum_cell_cp_labels_specified
-
-    #print("Prob", P_h_cp)
 
     return P_h_cp
 
@@ -68,12 +64,10 @@ class WeightOfEvidence:
 
         dir = os.path.join(absolute_path, extractor_method, dataset_name)
 
-        #self.list_concepts = load_list(os.path.join(dir, 'list_concepts.txt'))
         self.list_concepts = retrieve_concepts_ordered(dataset_name)
 
         self.dir_mask = os.path.join(dir, 'masks')
-        #self.dir_concept = os.path.join(dir, 'concepts')
-        epsilon = 5 * (10 ** (-4))
+        epsilon = 5 * (10 ** (-4)) # small epsilon added to each WoE score to avoid logarithm going to +/- infinite
 
         # Check if the tensor with the occurrences has been already computed
         output_dir = os.path.abspath(f'occurrence_{concept_presence_method}')
@@ -82,7 +76,6 @@ class WeightOfEvidence:
         if os.path.exists(csv_occ_path):
             self.occ = pd.read_csv(csv_occ_path, index_col=0)
             print("Occurrences already present")
-            print(self.occ)
             self.occ += epsilon
         else:
 
@@ -109,7 +102,6 @@ class WeightOfEvidence:
                 for i, mask in enumerate(masks):
                     concept = self.list_concepts[i]
                     #Apply thresholding to concept presence computed
-                    #concept_presence = 1 if concept_presence_compute(concept_presence_method, mask, saliency) > 0.5 else 0
                     concept_presence = concept_presence_compute(concept_presence_method, mask, saliency)
 
                     self.occ.loc[concept, self.dataset.classes[label]] += concept_presence  # increment occurrences for cell (concept,class)

@@ -66,21 +66,18 @@ class RISE(nn.Module):
         torch.save(self.masks, filepath)
 
     def forward(self, x):
-        # print("Shape of input image (x):", x.shape)
-        # print("Shape of masks (self.masks):", self.masks.shape)
-        # x: input image. (1, 3, H, W)
+
         device = x.device
 
         # keep probabilities of each class
         probs = []
-        # shape (n_masks, 3, H, W)
+
         masked_x = torch.mul(self.masks, x.to('cpu').data)
 
         # print("Shape of masked input (masked_x):", masked_x.shape)
 
         for i in range(0, self.n_masks, self.n_batch):
             input = masked_x[i:min(i + self.n_batch, self.n_masks)].to(device)
-            # print("Shape of input to the model (input):", input.shape)
             out = self.model(input)
             probs.append(torch.softmax(out, dim=1).to('cpu').data)
 
@@ -158,7 +155,7 @@ def main(cfg):
     )
 
     if cfg.dataset.name != 'imagenet':
-        model_path = os.path.join(cfg.mainDir, cfg.checkpoint)
+        model_path = os.path.join(cfg.currentDir, cfg.checkpoint)
         model.load_state_dict(torch.load(model_path, map_location=cfg.train.device)['state_dict'])
 
     device = torch.device(cfg.train.device if torch.cuda.is_available() else "cpu")
@@ -166,7 +163,7 @@ def main(cfg):
     model.eval()
 
     # load test dataset
-    data_dir = os.path.join(cfg.mainDir, cfg.dataset.path)
+    data_dir = os.path.join(cfg.currentDir, cfg.dataset.path)
     train, val, test = load_classification_dataset(cfg.dataset.name, data_dir, cfg.dataset.resize)
     dataloader = data.DataLoader(test, batch_size=1, shuffle=True)
 
@@ -176,9 +173,9 @@ def main(cfg):
     if save_images:
         # Create directory to save saliency maps
         finetune = "finetuned_" if cfg.train.finetune else "no_finetuned_"
-        output_dir_images = os.path.join(cfg.mainDir, 'saliency_output/rise_saliency_maps_images',
+        output_dir_images = os.path.join(cfg.currentDir, 'saliency_output/rise_saliency_maps_images',
                                          finetune + cfg.model + cfg.dataset.name)
-        output_dir_tensors = os.path.join(cfg.mainDir, 'saliency_output/rise_saliency_maps_tensors',
+        output_dir_tensors = os.path.join(cfg.currentDir, 'saliency_output/rise_saliency_maps_tensors',
                                           finetune + cfg.model + cfg.dataset.name)
         os.makedirs(output_dir_images, exist_ok=True)
         os.makedirs(output_dir_tensors, exist_ok=True)

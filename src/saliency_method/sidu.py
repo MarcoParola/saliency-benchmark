@@ -39,7 +39,7 @@ def main(cfg):
     )
 
     if cfg.dataset.name != 'imagenet':
-        model_path = os.path.join(cfg.mainDir, cfg.checkpoint)
+        model_path = os.path.join(cfg.currentDir, cfg.checkpoint)
         model.load_state_dict(torch.load(model_path, map_location=cfg.train.device)['state_dict'])
 
     device = torch.device(cfg.train.device if torch.cuda.is_available() else "cpu")
@@ -47,7 +47,7 @@ def main(cfg):
     model.eval()
 
     # load test dataset
-    data_dir = os.path.join(cfg.mainDir, cfg.dataset.path)
+    data_dir = os.path.join(cfg.currentDir, cfg.dataset.path)
     train, val, test = load_classification_dataset(cfg.dataset.name, data_dir, cfg.dataset.resize)
     dataloader = data.DataLoader(test, batch_size=cfg.train.batch_size, shuffle=True)
 
@@ -57,9 +57,9 @@ def main(cfg):
     if save_images:
         # Create directory to save saliency maps
         finetune = "finetuned_" if cfg.train.finetune else "no_finetuned_"
-        output_dir_images = os.path.join(cfg.mainDir, 'saliency_output/sidu_saliency_maps_images',
+        output_dir_images = os.path.join(cfg.currentDir, 'saliency_output/sidu_saliency_maps_images',
                                          finetune + cfg.model + cfg.dataset.name)
-        output_dir_tensors = os.path.join(cfg.mainDir, 'saliency_output/sidu_saliency_maps_tensors',
+        output_dir_tensors = os.path.join(cfg.currentDir, 'saliency_output/sidu_saliency_maps_tensors',
                                           finetune + cfg.model + cfg.dataset.name)
         os.makedirs(output_dir_images, exist_ok=True)
         os.makedirs(output_dir_tensors, exist_ok=True)

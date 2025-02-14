@@ -8,45 +8,30 @@ import numpy as np
 import torch.nn as nn
 import torch
 from PIL import Image
-from autodistill.utils import plot
 import cv2
 from autodistill.detection import CaptionOntology
 import supervision as sv
 from autodistill_grounded_sam_2 import GroundedSAM2
-from matplotlib import pyplot as plt
-from sam2.automatic_mask_generator import SAM2AutomaticMaskGenerator
-from sam2.build_sam import build_sam2
-from segment_anything import sam_model_registry
-from supervision.draw.color import ColorPalette
-from segment_anything.automatic_mask_generator import SamAutomaticMaskGenerator
+
 from torchvision.transforms import ToPILImage
 
-from src.datasets.classification import load_classification_dataset, ClassificationDataset
-from src.datasets.detection import load_detection_dataset
-from src.utils import save_annotated_images, save_mask
-from matplotlib.colors import ListedColormap
+from src.datasets.classification import load_classification_dataset
+
 
 OUTPUT_DIR = "output"
 
-import requests
 
 def create_ontology_from_string(caption):
     print("caption:" + str(caption))
-    # nlp = spacy.load("en_core_web_sm")
-    # doc = nlp(caption)  #process the caption
 
     parts = caption.split("/")
 
     # Extract all nouns (both singular and plural)
     nouns = list(set([token for token in parts]))  # lemma_ is used to convert plurals in singular
 
-    print("Nouns:")
-    print('. '.join(nouns))
-
     #Create dictionary for ontology mapping each nouns in itself
     ontology_dict = {word: word for word in nouns}
-    #ontology_dict = {get_wikipedia_description(word):word for word in nouns}
-    print(ontology_dict)
+    #print(ontology_dict)
     return CaptionOntology(ontology_dict)
 
 
@@ -74,8 +59,7 @@ def save_annotated_images_grounded(model, image, results):
     mask_annotator = sv.MaskAnnotator()
     annotated_frame = mask_annotator.annotate(scene=annotated_frame, detections=results)
     cv2.imwrite(os.path.join(OUTPUT_DIR, "grounded_sam2_annotated_image_with_mask.jpg"), annotated_frame)
-    # label all images in a folder called `context_images`
-    #model.label("../../../images", extension=".jpeg")
+
 
 
 def save_images_with_mask(input_boxes, masks, class_ids, img, model, idx):
@@ -85,9 +69,6 @@ def save_images_with_mask(input_boxes, masks, class_ids, img, model, idx):
         mask=masks.astype(bool),  # (n, h, w)
         class_id=class_ids
     )
-
-    #box_annotator = sv.BoxAnnotator()
-    #annotated_frame = box_annotator.annotate(scene=img.copy(), detections=detections)
 
     label_annotator = sv.LabelAnnotator()
     annotated_frame = label_annotator.annotate(scene=img, detections=detections,
@@ -141,18 +122,11 @@ class GroundedSam2(nn.Module):
             with torch.cuda.amp.autocast():
                 results = self.model.predict(image)
 
-        #print(results)
-        #print(self.model.ontology.classes())
-
-        # if debug is True:
-        #save_annotated_images_grounded(self.model, image, results)
-
         bbox = results.xyxy
         categories = results.class_id
         confidence_score = results.confidence
 
         keep_indices = torch.ops.torchvision.nms(torch.tensor(bbox), torch.tensor(confidence_score), iou_threshold=0.5)
-        # print(keep_indices)
 
         bbox = bbox[keep_indices]
         categories = categories[keep_indices]
@@ -162,17 +136,6 @@ class GroundedSam2(nn.Module):
             bbox = np.expand_dims(bbox, axis=0)
             categories = np.array([categories])
             confidence_score = np.array([confidence_score])
-
-        # results = sv.Detections(
-        #     xyxy=bbox,
-        #     confidence=confidence_score,
-        #     class_id=categories
-        # )
-        #
-        # labels = [self.model.ontology.classes()[cat] for cat in categories]
-
-        # annotated_frame=save_annotated_images(labels, image, results)
-        # cv2.imwrite(os.path.join(OUTPUT_DIR, "groundingdino_annotated_image.jpg"), annotated_frame)
 
         return bbox, categories, confidence_score
 
