@@ -2,11 +2,11 @@ import pandas as pd
 import os
 
 def get_imagenette():
-    df = pd.read_csv(os.path.join('data', 'fusion_output_imagenette.csv'))
+    df = pd.read_csv(os.path.join('data', 'fusion_woe_score', 'fusion_output_imagenette.csv'))
     return df
 
 def get_intelimage():
-    df = pd.read_csv(os.path.join('data', 'fusion_output_intel_image.csv'))
+    df = pd.read_csv(os.path.join('data', 'fusion_woe_score', 'fusion_output_intel_image.csv'))
     return df
 
 def main():
@@ -29,12 +29,12 @@ def main():
     df_imagenette = df_imagenette[(df_imagenette['Classifier'] == 'resnet') & (df_imagenette['Saliency'] == 'gradcam') & (df_imagenette['Concept Presence'] == 'cas') ]
     df_imagenette = df_imagenette.groupby('Extractor')['WOE Score'].mean().reset_index()
     print('Imagenette')
-    print(df_imagenette)
+    print(df_imagenette.sort_values(by='WOE Score', ascending=False))
     
     df_intelimage = df_intelimage[(df_intelimage['Classifier'] == 'resnet') & (df_intelimage['Saliency'] == 'gradcam') & (df_intelimage['Concept Presence'] == 'cas') ]
     df_intelimage = df_intelimage.groupby('Extractor')['WOE Score'].mean().reset_index()
     print('\nIntel Image')
-    print(df_intelimage)
+    print(df_intelimage.sort_values(by='WOE Score', ascending=False))
 
     #RQ2
     print('\n################### RQ2 ###################')
@@ -44,12 +44,12 @@ def main():
     df_imagenette = df_imagenette[(df_imagenette['Classifier'] == 'vgg') ]
     df_imagenette = df_imagenette.groupby('Saliency')['WOE Score'].mean().reset_index()
     print('Imagenette')
-    print(df_imagenette)
+    print(df_imagenette.sort_values(by='WOE Score', ascending=False))
 
     df_intelimage = df_intelimage[(df_intelimage['Classifier'] == 'vgg') ]
     df_intelimage = df_intelimage.groupby('Saliency')['WOE Score'].mean().reset_index()
     print('\nIntel Image')
-    print(df_intelimage)
+    print(df_intelimage.sort_values(by='WOE Score', ascending=False))
 
     #RQ3
     print('\n################### RQ3 ###################')
@@ -57,7 +57,7 @@ def main():
     df_imagenette = df_imagenette[(df_imagenette['Classes'] == 'English springer') ]
     df_imagenette = df_imagenette.groupby('Extractor')['WOE Score'].mean().reset_index()
     print('Imagenette')
-    print(df_imagenette)
+    print(df_imagenette.sort_values(by='WOE Score', ascending=False))
 
     #RQ4
     print('\n################### RQ4 ###################')
@@ -65,18 +65,322 @@ def main():
     df_intelimage = df_intelimage[(df_intelimage['Extractor'] == 'florence') & (df_intelimage['Saliency'] == 'gradcam') & (df_intelimage['Concept Presence'] == 'iou') & (df_intelimage['Classes'] == 'street') ]
     df_intelimage = df_intelimage.groupby('Classifier')['WOE Score'].mean().reset_index()
     print('Intel Image', 'florence')
-    print(df_intelimage)
+    print(df_intelimage.sort_values(by='WOE Score', ascending=False))
 
     df_intelimage = get_intelimage()
     df_intelimage = df_intelimage[(df_intelimage['Extractor'] == 'groundingdino') & (df_intelimage['Saliency'] == 'gradcam') & (df_intelimage['Concept Presence'] == 'iou') & (df_intelimage['Classes'] == 'street') ]
     df_intelimage = df_intelimage.groupby('Classifier')['WOE Score'].mean().reset_index()
     print('Intel Image', 'groundingdino')
-    print(df_intelimage)
+    print(df_intelimage.sort_values(by='WOE Score', ascending=False))
+
+    ###### MEAN SALIENCY ############
+
+    print('\n################## Media Saliency ##################')
+
+    df_imagenette = get_imagenette()
+    df_imagenette = df_imagenette.groupby('Saliency')['WOE Score'].mean().reset_index()
+    print('Imagenette')
+    print(df_imagenette.sort_values(by='WOE Score', ascending=False))
+
+    df_intelimage = get_intelimage()
+    df_intelimage = df_intelimage.groupby('Saliency')['WOE Score'].mean().reset_index()
+    print('Intel Image')
+    print(df_intelimage.sort_values(by='WOE Score', ascending=False))
+
+
+    ####### COMPILING TABLE FOR HEATMAP ##################
+
+    print("############## Compiling tables ###################################")
+
+
+    df_imagenette = get_imagenette()
+    df_imagenette = df_imagenette[
+        (df_imagenette['Extractor'] == 'florence') & (df_imagenette['Concept Presence'] == 'cas') & (
+                    df_imagenette['Classifier'] == 'resnet')]
+    df_imagenette = df_imagenette.groupby('Saliency')['WOE Score'].mean().reset_index()
+    print('Imagenette', 'ResNet', 'florence', 'cas')
+    print(df_imagenette.sort_values(by='WOE Score', ascending=False))
+
+    df_intelimage = get_intelimage()
+    df_intelimage = df_intelimage[(df_intelimage['Extractor'] == 'florence') & (df_intelimage['Concept Presence'] == 'cas') & (df_intelimage['Classifier'] == 'resnet') ]
+    df_intelimage = df_intelimage.groupby('Saliency')['WOE Score'].mean().reset_index()
+    print('Intel Image', 'ResNet', 'florence', 'cas')
+    print(df_intelimage.sort_values(by='WOE Score', ascending=False))
+
+    df_imagenette = get_imagenette()
+    df_imagenette = df_imagenette[
+        (df_imagenette['Extractor'] == 'florence') & (df_imagenette['Concept Presence'] == 'casp') & (
+                df_imagenette['Classifier'] == 'resnet')]
+    df_imagenette = df_imagenette.groupby('Saliency')['WOE Score'].mean().reset_index()
+    print('Imagenette', 'ResNet', 'florence', 'casp')
+    print(df_imagenette.sort_values(by='WOE Score', ascending=False))
+
+    df_intelimage = get_intelimage()
+    df_intelimage = df_intelimage[
+        (df_intelimage['Extractor'] == 'florence') & (df_intelimage['Concept Presence'] == 'casp') & (
+                    df_intelimage['Classifier'] == 'resnet')]
+    df_intelimage = df_intelimage.groupby('Saliency')['WOE Score'].mean().reset_index()
+    print('Intel Image', 'ResNet', 'florence', 'casp')
+    print(df_intelimage.sort_values(by='WOE Score', ascending=False))
+
+    df_imagenette = get_imagenette()
+    df_imagenette = df_imagenette[
+        (df_imagenette['Extractor'] == 'florence') & (df_imagenette['Concept Presence'] == 'iou') & (
+                df_imagenette['Classifier'] == 'resnet')]
+    df_imagenette = df_imagenette.groupby('Saliency')['WOE Score'].mean().reset_index()
+    print('Imagenette', 'ResNet', 'florence', 'iou')
+    print(df_imagenette.sort_values(by='WOE Score', ascending=False))
+
+    df_intelimage = get_intelimage()
+    df_intelimage = df_intelimage[
+        (df_intelimage['Extractor'] == 'florence') & (df_intelimage['Concept Presence'] == 'iou') & (
+                    df_intelimage['Classifier'] == 'resnet')]
+    df_intelimage = df_intelimage.groupby('Saliency')['WOE Score'].mean().reset_index()
+    print('Intel Image', 'ResNet', 'florence', 'iou')
+    print(df_intelimage.sort_values(by='WOE Score', ascending=False))
+
+    df_imagenette = get_imagenette()
+    df_imagenette = df_imagenette[
+        (df_imagenette['Extractor'] == 'groundingdino') & (df_imagenette['Concept Presence'] == 'cas') & (
+                df_imagenette['Classifier'] == 'resnet')]
+    df_imagenette = df_imagenette.groupby('Saliency')['WOE Score'].mean().reset_index()
+    print('Imagenette', 'ResNet', 'groundingdino', 'cas')
+    print(df_imagenette.sort_values(by='WOE Score', ascending=False))
+
+    df_intelimage = get_intelimage()
+    df_intelimage = df_intelimage[
+        (df_intelimage['Extractor'] == 'groundingdino') & (df_intelimage['Concept Presence'] == 'cas') & (
+                    df_intelimage['Classifier'] == 'resnet')]
+    df_intelimage = df_intelimage.groupby('Saliency')['WOE Score'].mean().reset_index()
+    print('Intel Image', 'ResNet', 'groundingdino', 'cas')
+    print(df_intelimage.sort_values(by='WOE Score', ascending=False))
+
+    df_imagenette = get_imagenette()
+    df_imagenette = df_imagenette[
+        (df_imagenette['Extractor'] == 'groundingdino') & (df_imagenette['Concept Presence'] == 'casp') & (
+                df_imagenette['Classifier'] == 'resnet')]
+    df_imagenette = df_imagenette.groupby('Saliency')['WOE Score'].mean().reset_index()
+    print('Imagenette', 'ResNet', 'groundingdino', 'casp')
+    print(df_imagenette.sort_values(by='WOE Score', ascending=False))
+
+    df_intelimage = get_intelimage()
+    df_intelimage = df_intelimage[
+        (df_intelimage['Extractor'] == 'groundingdino') & (df_intelimage['Concept Presence'] == 'casp') & (
+                df_intelimage['Classifier'] == 'resnet')]
+    df_intelimage = df_intelimage.groupby('Saliency')['WOE Score'].mean().reset_index()
+    print('Intel Image', 'ResNet', 'groundingdino', 'casp')
+    print(df_intelimage.sort_values(by='WOE Score', ascending=False))
+
+    df_imagenette = get_imagenette()
+    df_imagenette = df_imagenette[
+        (df_imagenette['Extractor'] == 'groundingdino') & (df_imagenette['Concept Presence'] == 'iou') & (
+                df_imagenette['Classifier'] == 'resnet')]
+    df_imagenette = df_imagenette.groupby('Saliency')['WOE Score'].mean().reset_index()
+    print('Imagenette', 'ResNet', 'groundingdino', 'iou')
+    print(df_imagenette.sort_values(by='WOE Score', ascending=False))
+
+    df_intelimage = get_intelimage()
+    df_intelimage = df_intelimage[
+        (df_intelimage['Extractor'] == 'groundingdino') & (df_intelimage['Concept Presence'] == 'iou') & (
+                df_intelimage['Classifier'] == 'resnet')]
+    df_intelimage = df_intelimage.groupby('Saliency')['WOE Score'].mean().reset_index()
+    print('Intel Image', 'ResNet', 'groundingdino', 'iou')
+    print(df_intelimage.sort_values(by='WOE Score', ascending=False))
+
+
+    ### VGGG ##################################
 
 
 
+    df_imagenette = get_imagenette()
+    df_imagenette = df_imagenette[
+        (df_imagenette['Extractor'] == 'florence') & (df_imagenette['Concept Presence'] == 'cas') & (
+                    df_imagenette['Classifier'] == 'vgg')]
+    df_imagenette = df_imagenette.groupby('Saliency')['WOE Score'].mean().reset_index()
+    print('Imagenette', 'vgg', 'florence', 'cas')
+    print(df_imagenette.sort_values(by='WOE Score', ascending=False))
+
+    df_intelimage = get_intelimage()
+    df_intelimage = df_intelimage[(df_intelimage['Extractor'] == 'florence') & (df_intelimage['Concept Presence'] == 'cas') & (df_intelimage['Classifier'] == 'vgg') ]
+    df_intelimage = df_intelimage.groupby('Saliency')['WOE Score'].mean().reset_index()
+    print('Intel Image', 'vgg', 'florence', 'cas')
+    print(df_intelimage.sort_values(by='WOE Score', ascending=False))
+
+    df_imagenette = get_imagenette()
+    df_imagenette = df_imagenette[
+        (df_imagenette['Extractor'] == 'florence') & (df_imagenette['Concept Presence'] == 'casp') & (
+                df_imagenette['Classifier'] == 'vgg')]
+    df_imagenette = df_imagenette.groupby('Saliency')['WOE Score'].mean().reset_index()
+    print('Imagenette', 'vgg', 'florence', 'casp')
+    print(df_imagenette.sort_values(by='WOE Score', ascending=False))
+
+    df_intelimage = get_intelimage()
+    df_intelimage = df_intelimage[
+        (df_intelimage['Extractor'] == 'florence') & (df_intelimage['Concept Presence'] == 'casp') & (
+                    df_intelimage['Classifier'] == 'vgg')]
+    df_intelimage = df_intelimage.groupby('Saliency')['WOE Score'].mean().reset_index()
+    print('Intel Image', 'vgg', 'florence', 'casp')
+    print(df_intelimage.sort_values(by='WOE Score', ascending=False))
+
+    df_imagenette = get_imagenette()
+    df_imagenette = df_imagenette[
+        (df_imagenette['Extractor'] == 'florence') & (df_imagenette['Concept Presence'] == 'iou') & (
+                df_imagenette['Classifier'] == 'vgg')]
+    df_imagenette = df_imagenette.groupby('Saliency')['WOE Score'].mean().reset_index()
+    print('Imagenette', 'vgg', 'florence', 'iou')
+    print(df_imagenette.sort_values(by='WOE Score', ascending=False))
+
+    df_intelimage = get_intelimage()
+    df_intelimage = df_intelimage[
+        (df_intelimage['Extractor'] == 'florence') & (df_intelimage['Concept Presence'] == 'iou') & (
+                    df_intelimage['Classifier'] == 'vgg')]
+    df_intelimage = df_intelimage.groupby('Saliency')['WOE Score'].mean().reset_index()
+    print('Intel Image', 'vgg', 'florence', 'iou')
+    print(df_intelimage.sort_values(by='WOE Score', ascending=False))
+
+    df_imagenette = get_imagenette()
+    df_imagenette = df_imagenette[
+        (df_imagenette['Extractor'] == 'groundingdino') & (df_imagenette['Concept Presence'] == 'cas') & (
+                df_imagenette['Classifier'] == 'vgg')]
+    df_imagenette = df_imagenette.groupby('Saliency')['WOE Score'].mean().reset_index()
+    print('Imagenette', 'vgg', 'groundingdino', 'cas')
+    print(df_imagenette.sort_values(by='WOE Score', ascending=False))
+
+    df_intelimage = get_intelimage()
+    df_intelimage = df_intelimage[
+        (df_intelimage['Extractor'] == 'groundingdino') & (df_intelimage['Concept Presence'] == 'cas') & (
+                    df_intelimage['Classifier'] == 'vgg')]
+    df_intelimage = df_intelimage.groupby('Saliency')['WOE Score'].mean().reset_index()
+    print('Intel Image', 'vgg', 'groundingdino', 'cas')
+    print(df_intelimage.sort_values(by='WOE Score', ascending=False))
+
+    df_imagenette = get_imagenette()
+    df_imagenette = df_imagenette[
+        (df_imagenette['Extractor'] == 'groundingdino') & (df_imagenette['Concept Presence'] == 'casp') & (
+                df_imagenette['Classifier'] == 'vgg')]
+    df_imagenette = df_imagenette.groupby('Saliency')['WOE Score'].mean().reset_index()
+    print('Imagenette', 'vgg', 'groundingdino', 'casp')
+    print(df_imagenette.sort_values(by='WOE Score', ascending=False))
+
+    df_intelimage = get_intelimage()
+    df_intelimage = df_intelimage[
+        (df_intelimage['Extractor'] == 'groundingdino') & (df_intelimage['Concept Presence'] == 'casp') & (
+                df_intelimage['Classifier'] == 'vgg')]
+    df_intelimage = df_intelimage.groupby('Saliency')['WOE Score'].mean().reset_index()
+    print('Intel Image', 'vgg', 'groundingdino', 'casp')
+    print(df_intelimage.sort_values(by='WOE Score', ascending=False))
+
+    df_imagenette = get_imagenette()
+    df_imagenette = df_imagenette[
+        (df_imagenette['Extractor'] == 'groundingdino') & (df_imagenette['Concept Presence'] == 'iou') & (
+                df_imagenette['Classifier'] == 'vgg')]
+    df_imagenette = df_imagenette.groupby('Saliency')['WOE Score'].mean().reset_index()
+    print('Imagenette', 'vgg', 'groundingdino', 'iou')
+    print(df_imagenette.sort_values(by='WOE Score', ascending=False))
+
+    df_intelimage = get_intelimage()
+    df_intelimage = df_intelimage[
+        (df_intelimage['Extractor'] == 'groundingdino') & (df_intelimage['Concept Presence'] == 'iou') & (
+                df_intelimage['Classifier'] == 'vgg')]
+    df_intelimage = df_intelimage.groupby('Saliency')['WOE Score'].mean().reset_index()
+    print('Intel Image', 'vgg', 'groundingdino', 'iou')
+    print(df_intelimage.sort_values(by='WOE Score', ascending=False))
 
 
+    ############### ALTRA COPPIA DI TABELLE ##################################
+
+
+    df_imagenette = get_imagenette()
+    df_imagenette = df_imagenette[
+        (df_imagenette['Extractor'] == 'groundingdino') & (df_imagenette['Concept Presence'] == 'iou') ]
+    df_imagenette = df_imagenette.groupby('Classes')['WOE Score'].mean().reset_index()
+    print('Imagenette', 'groundingdino', 'iou')
+    print(df_imagenette.sort_values(by='WOE Score', ascending=False))
+
+    df_intelimage = get_intelimage()
+    df_intelimage = df_intelimage[
+        (df_intelimage['Extractor'] == 'groundingdino') & (df_intelimage['Concept Presence'] == 'iou') & (
+                df_intelimage['Classifier'] == 'vgg')]
+    df_intelimage = df_intelimage.groupby('Classes')['WOE Score'].mean().reset_index()
+    print('Intel Image', 'groundingdino', 'iou')
+    print(df_intelimage.sort_values(by='WOE Score', ascending=False))
+
+    df_imagenette = get_imagenette()
+    df_imagenette = df_imagenette[
+        (df_imagenette['Extractor'] == 'groundingdino') & (df_imagenette['Concept Presence'] == 'cas') ]
+    df_imagenette = df_imagenette.groupby('Classes')['WOE Score'].mean().reset_index()
+    print('Imagenette', 'groundingdino', 'cas')
+    print(df_imagenette.sort_values(by='WOE Score', ascending=False))
+
+    df_intelimage = get_intelimage()
+    df_intelimage = df_intelimage[
+        (df_intelimage['Extractor'] == 'groundingdino') & (df_intelimage['Concept Presence'] == 'cas') & (
+                df_intelimage['Classifier'] == 'vgg')]
+    df_intelimage = df_intelimage.groupby('Classes')['WOE Score'].mean().reset_index()
+    print('Intel Image', 'groundingdino', 'cas')
+    print(df_intelimage.sort_values(by='WOE Score', ascending=False))
+
+    df_imagenette = get_imagenette()
+    df_imagenette = df_imagenette[
+        (df_imagenette['Extractor'] == 'groundingdino') & (df_imagenette['Concept Presence'] == 'casp') ]
+    df_imagenette = df_imagenette.groupby('Classes')['WOE Score'].mean().reset_index()
+    print('Imagenette', 'groundingdino', 'casp')
+    print(df_imagenette.sort_values(by='WOE Score', ascending=False))
+
+    df_intelimage = get_intelimage()
+    df_intelimage = df_intelimage[
+        (df_intelimage['Extractor'] == 'groundingdino') & (df_intelimage['Concept Presence'] == 'casp') & (
+                df_intelimage['Classifier'] == 'vgg')]
+    df_intelimage = df_intelimage.groupby('Classes')['WOE Score'].mean().reset_index()
+    print('Intel Image', 'groundingdino', 'casp')
+    print(df_intelimage.sort_values(by='WOE Score', ascending=False))
+
+    ####### FLORENCE ALTRA TABELLA
+
+    df_imagenette = get_imagenette()
+    df_imagenette = df_imagenette[
+        (df_imagenette['Extractor'] == 'florence') & (df_imagenette['Concept Presence'] == 'iou')]
+    df_imagenette = df_imagenette.groupby('Classes')['WOE Score'].mean().reset_index()
+    print('Imagenette', 'vgg', 'florence', 'iou')
+    print(df_imagenette.sort_values(by='WOE Score', ascending=False))
+
+    df_intelimage = get_intelimage()
+    df_intelimage = df_intelimage[
+        (df_intelimage['Extractor'] == 'florence') & (df_intelimage['Concept Presence'] == 'iou') & (
+                df_intelimage['Classifier'] == 'vgg')]
+    df_intelimage = df_intelimage.groupby('Classes')['WOE Score'].mean().reset_index()
+    print('Intel Image', 'vgg', 'florence', 'iou')
+    print(df_intelimage.sort_values(by='WOE Score', ascending=False))
+
+    df_imagenette = get_imagenette()
+    df_imagenette = df_imagenette[
+        (df_imagenette['Extractor'] == 'florence') & (df_imagenette['Concept Presence'] == 'cas')]
+    df_imagenette = df_imagenette.groupby('Classes')['WOE Score'].mean().reset_index()
+    print('Imagenette', 'florence', 'cas')
+    print(df_imagenette.sort_values(by='WOE Score', ascending=False))
+
+    df_intelimage = get_intelimage()
+    df_intelimage = df_intelimage[
+        (df_intelimage['Extractor'] == 'florence') & (df_intelimage['Concept Presence'] == 'cas') & (
+                df_intelimage['Classifier'] == 'vgg')]
+    df_intelimage = df_intelimage.groupby('Classes')['WOE Score'].mean().reset_index()
+    print('Intel Image', 'florence', 'cas')
+    print(df_intelimage.sort_values(by='WOE Score', ascending=False))
+
+    df_imagenette = get_imagenette()
+    df_imagenette = df_imagenette[
+        (df_imagenette['Extractor'] == 'florence') & (df_imagenette['Concept Presence'] == 'casp')]
+    df_imagenette = df_imagenette.groupby('Classes')['WOE Score'].mean().reset_index()
+    print('Imagenette', 'florence', 'casp')
+    print(df_imagenette.sort_values(by='WOE Score', ascending=False))
+
+    df_intelimage = get_intelimage()
+    df_intelimage = df_intelimage[
+        (df_intelimage['Extractor'] == 'florence') & (df_intelimage['Concept Presence'] == 'casp') & (
+                df_intelimage['Classifier'] == 'vgg')]
+    df_intelimage = df_intelimage.groupby('Classes')['WOE Score'].mean().reset_index()
+    print('Intel Image', 'florence', 'casp')
+    print(df_intelimage.sort_values(by='WOE Score', ascending=False))
 
 
 
