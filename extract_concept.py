@@ -21,10 +21,9 @@ def main(cfg):
 
     if cfg.mask.dataset:
         caption = retrieve_concepts(cfg.dataset.name)
-        print(caption)
+        #print(caption)
         list_ordered_concept = retrieve_concepts_ordered(cfg.dataset.name)
-        print(f"list ordered:{list_ordered_concept}")
-        # IMAGE_PATH = "images/flower.jpg"
+        #print(f"list ordered:{list_ordered_concept}")
 
         resize = 224
 
@@ -43,8 +42,6 @@ def main(cfg):
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
 
-        #save_list(os.path.join(output_folder,'list_concepts.txt'), model.ontology.classes())
-
         for idx in range(dataset.__len__()):
             print("IMG " + str(idx))
             # Get the ground truth bounding boxes and labels
@@ -58,18 +55,15 @@ def main(cfg):
             # print(masks.shape)
 
             if len(masks) > 0:
-                # save_images_with_mask(boxes,masks,classes,image,model,idx) #usable in case of printing only present class mask
-                # save_images_with_mask_for_all_concepts(image, masks, model, boxes)  #to print all the class masks, even if not present
-                # plot_grid_masks(image, masks, model.ontology.classes(), idx)
+
                 output_dir_tensors = os.path.join(output_folder,'masks')
-                #output_dir_classes = os.path.join(output_folder,'concepts')
                 if not os.path.exists(output_dir_tensors):
                     os.makedirs(output_dir_tensors)
-                #if not os.path.exists(output_dir_classes):
-                    #os.makedirs(output_dir_classes)
 
                 #mi carico la lista ordinata di concetti, for su questo, vedo se è presente su classes, allora lo associo, riordina
                 #ndo la maschera
+                print(f"maschere: {masks}")
+                print(f"concepts: {classes}")
 
                 masks_ordered = np.expand_dims(np.full((resize, resize), False, dtype=bool), axis=0)
                 masks_ordered = np.repeat(masks_ordered, len(list_ordered_concept), axis=0)
@@ -77,21 +71,26 @@ def main(cfg):
 
                 list_concept_ontology = model.ontology.classes()
 
-                print(f"lista ontology:{list_concept_ontology}")
-
                 for i, concept_ordered in enumerate(list_ordered_concept):
                     print(f"concept: {concept_ordered} in index {i}")
                     # make bind between ordered concept and concept of GroundedSam2, finding the class corresponding to the concept of this cycle for
                     idx_concept = list_concept_ontology.index(concept_ordered)
-                    # mask_single_concept = np.full((resize, resize), False, dtype=bool) # initialize empty mask
+
                     for mask, concept in zip(masks, classes):
                         id = int(concept.item())
                         if id == idx_concept:
                             masks_ordered[i] = np.logical_or(masks_ordered[i], mask)
 
+                    # masks_ordered = np.append(masks_ordered, mask_single_concept)
+                    # masks_ordered[i] = mask_single_concept
+                    # # only for debug purpose TODO delete it
+                    class_ordered[i] = idx_concept
+                    # class_ordered = np.append(class_ordered, concepts[idx_concept])
+
+                print(f"maschere: {masks_ordered}")
+                print(f"concepts: {class_ordered}")
 
                 save_mask(os.path.join(output_dir_tensors, f'mask_{idx}.pth'), masks_ordered)
-                #save_mask(os.path.join(output_dir_classes, f'classes_{idx}.pth'), classes) # I keep also the numpy array containing the classes
     else:
         # if cfg.mask.dataset == False, that means that we want to produce the mask for a single image
 
@@ -126,9 +125,7 @@ def main(cfg):
             output_dir = os.path.join(os.path.abspath("mask_output"), 'single_image')
             if not os.path.exists(output_dir):
                 os.makedirs(output_dir)
-            # save_images_with_mask(boxes,masks,classes,image,model,idx) #usable in case of printing only present class mask
             save_images_with_mask_for_all_concepts(image, masks, classes, model.ontology.classes(), boxes,0, output_dir)  #to print all the class masks, even if not present
-            # plot_grid_masks(image, masks, model.ontology.classes(), idx)
 
 
 if __name__ == '__main__':

@@ -222,12 +222,7 @@ def from_normalized_cxcywh_to_xyxy(image, boxes):
 
 def draw_grounding_dino_prediction(image_source: np.ndarray, boxes: torch.Tensor, logits: torch.Tensor,
                                    phrases: List[str]) -> np.ndarray:
-    # h, w, _ = image_source.shape
-    # boxes = boxes * torch.Tensor([w, h, w, h])
-    # print("Final boxes:"+str(boxes))
-    #xyxy = box_convert(boxes=boxes, in_fmt="cxcywh", out_fmt="xyxy").numpy()
-    #print(xyxy)
-    #print(boxes)
+
     detections = sv.Detections(xyxy=np.array(boxes), class_id=np.arange(len(boxes)))
 
     labels = [
@@ -274,9 +269,6 @@ def save_images_with_mask_for_all_concepts(image, masks, categories, classes_mod
         mask=masks.astype(bool),  # (n, h, w)
         class_id=np.array(categories)
     )
-
-    # box_annotator = sv.BoxAnnotator()
-    # annotated_frame = box_annotator.annotate(scene=img.copy(), detections=detections)
 
     label_annotator = sv.LabelAnnotator()
     annotated_frame = label_annotator.annotate(scene=img, detections=detections,

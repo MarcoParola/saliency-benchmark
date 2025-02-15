@@ -23,7 +23,7 @@ def main(cfg):
     )
 
     if cfg.dataset.name != 'imagenet':
-        model_path = os.path.join(cfg.mainDir, cfg.checkpoint)
+        model_path = os.path.join(cfg.currentDir, cfg.checkpoint)
         model.load_state_dict(torch.load(model_path, map_location=cfg.train.device)['state_dict'])
 
     device = torch.device(cfg.train.device if torch.cuda.is_available() else "cpu")
@@ -31,7 +31,7 @@ def main(cfg):
     model.eval()
 
     # Load test dataset
-    data_dir = os.path.join(cfg.mainDir, cfg.dataset.path)
+    data_dir = os.path.join(cfg.currentDir, cfg.dataset.path)
     train, val, test = load_classification_dataset(cfg.dataset.name, data_dir, cfg.dataset.resize)
     dataset = test
     dataloader = data.DataLoader(dataset, batch_size=cfg.train.batch_size, shuffle=True)
@@ -40,7 +40,7 @@ def main(cfg):
     save_images = cfg.visualize.save_images
 
     if save_images:
-        output_dir = os.path.join(cfg.mainDir, 'cifar100_output_dir')
+        output_dir = os.path.join(cfg.currentDir, 'cifar100_output_dir')
         os.makedirs(output_dir, exist_ok=True)
 
         # Open CSV file for writing predicted and true classes

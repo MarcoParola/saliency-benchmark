@@ -57,10 +57,6 @@ def intersection_over_union(mask, saliency):
             count_overperform += 1
         count_step += 1
 
-        print(f"presence: {iou}")
-    print(f"superamenti: {count_overperform}")
-    print(f"steps: {count_step}")
-
     return count_overperform / count_step
 
 def concept_average_saliency_with_penalty(mask, saliency):
@@ -68,7 +64,6 @@ def concept_average_saliency_with_penalty(mask, saliency):
         print("ERROR in shape of tensors")
 
     size_mask = torch.sum(mask)
-    print(size_mask)
 
     #Avoid division by zero, if a concept is not present, return 0
     if size_mask == 0:
