@@ -86,7 +86,7 @@ You can compute weight of evidence score using file `evaluate/woe_evaluation.py`
 - the `saliency.method` param from the following: `sidu`, `gradcam`, `lime`, `rise`.
 - the `modelSam` param from the following `GroundingDino`,`Florence2`.
 - the `woe.concept_presence_method` param from the following `cas`, `iou`, `casp`.
-- the `woe.concept_favor_against` boolean param in order to choose if compute woe score considering all the concepts for each class, or if compute the woe score for the 'favor' and 'against' concepts for a specific class, that are needed to be define in a csv file , saved as `{dataset_name}_concepts_favor_against.csv`, saved in the [concepts](data/concepts) folder.
+- the `woe.concept_favor_against` boolean param in order to choose if compute woe score considering all the concepts for each class (setting it to False), or if compute the woe score for the 'favor' and 'against' concepts for a specific class (setting it to True), that are needed to be defined in a csv file , saved as `{dataset_name}_concepts_favor_against.csv`, in the [concepts](data/concepts) folder.
 
 To produce woe score considering each classes of the dataset and each concepts defined, use the following command:
 ```sh
