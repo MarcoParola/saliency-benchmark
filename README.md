@@ -4,7 +4,7 @@ Repository for benchmarking different post-hoc XAI explanation methods on image 
 ## Install and Usage
 To install and use the project, follow the step explained in the [documentation](docs/README.md).
 
-For a rapid trial, you can fine the extracted masks, the saliency maps computed for each method, the checkpoints of the trained models and the necessary probabilities for weight of evidence computation in the drive at the following [link](https://drive.google.com/drive/folders/1wjHDtH7-IyGBJVbL-XrJ14B5YB9azHmU?usp=sharing) 
+For a rapid trial, you can find the extracted masks, the saliency maps computed for each method, the checkpoints of the trained models and the necessary occurrences for weight of evidence computation in the drive at the following [link](https://drive.google.com/drive/folders/1wjHDtH7-IyGBJVbL-XrJ14B5YB9azHmU?usp=sharing) 
 
 ## Prediction and saliency map
 
