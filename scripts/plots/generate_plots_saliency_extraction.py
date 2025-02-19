@@ -129,7 +129,7 @@ def main(cfg):
         # Concept mask
         plt.figure(figsize=(5, 5))
         plt.imshow(image.squeeze().permute(1, 2, 0))
-        plt.imshow(mask_head_paws.squeeze(), cmap='', alpha=0.4)
+        plt.imshow(mask_head_paws.squeeze(), cmap='jet', alpha=0.4)
         plt.axis('off')
         plt.savefig(os.path.join(output_dir, f'concept_{cfg.saliency.method}.pdf'), bbox_inches='tight')
         plt.close()
